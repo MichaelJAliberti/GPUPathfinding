@@ -1,0 +1,8 @@
+STEPS FOR SUCCESS:
+
+A* Algorithm
+- Heuristic Funtion: Manhatten?
+YAML parser
+CBS frame
+Python Visualizer
+Dijkstra's for testing correctness
