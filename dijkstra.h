@@ -22,7 +22,7 @@ vector<int> dijkstra(string grid_name, int num_agent)
 	bool sptSet[size];
 	
 	vector<int> pred(size, -1);
-	vector<int> path(size, -1);
+	vector<int> path;
 	int preditor;
 	int counter;
 	int src;
@@ -116,7 +116,7 @@ vector<int> dijkstra(string grid_name, int num_agent)
 	{
 		//cout << preditor << " -> ";
 		preditor = pred[preditor];		
-		path[counter] = preditor;
+		path.push_back(preditor);
 		counter++;
 		
 	}
