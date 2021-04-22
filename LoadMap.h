@@ -85,6 +85,8 @@ Grid::Grid(string filename){
 	string line, token, aname;
 	fstream infile;
 
+	num_agents = 0;
+
 	infile.open(filename);
 
 	// Line Parser/load data
@@ -95,6 +97,9 @@ Grid::Grid(string filename){
 		while (getline(infile, line)){
 			if (line.compare(0, 4, "map:") == 0)
 				break;
+
+			// increment agent count
+			num_agents++;
 			
 			// read in goal
 			stringstream s1(line);
@@ -122,6 +127,7 @@ Grid::Grid(string filename){
 
 			// initialize agent
 			Agent bot(aso_x, aso_y, ades_x, ades_y, aname);
+			agents.push_back(bot);
 		}
 
 		// get dimensions
@@ -153,11 +159,7 @@ Grid::Grid(string filename){
 			y = stoi(token);
 
 			matrix[x + y*size] = -1; // obstacle to -1
-
-			//cout << "[" << x << ", " << y << "]" << endl;
 		}
-
-		//cout << "SIZE: " << size * size << endl;
 	}
 	catch (...){
 		cout << "Cannot parse file..." << endl << "SHUTTING DOWN" << endl;
