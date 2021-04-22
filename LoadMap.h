@@ -23,6 +23,7 @@ public:
 
 	// constructors
 	Agent();
+	Agent(const Agent& obj); // copy constructor
 	Agent(int start_x, int start_y, int end_x, int end_y);
 	Agent(int start_x, int start_y, int end_x, int end_y, string in_name);
 };
@@ -33,6 +34,14 @@ Agent::Agent(){
 	dx = 0;
 	dy = 0;
 	name = "default";
+}
+
+Agent::Agent(const Agent& obj){
+	sx = obj.sx;
+	sy = obj.sy;
+	dx = obj.dx;
+	dy = obj.dy;
+	name = obj.name;
 }
 
 Agent::Agent(int start_x, int start_y, int end_x, int end_y){
@@ -88,6 +97,10 @@ Grid::Grid(string filename){
 	num_agents = 0;
 
 	infile.open(filename);
+	if (!infile){
+		cout << "Cannot open file" << endl;
+		exit(1);
+	}
 
 	// Line Parser/load data
 	try{
