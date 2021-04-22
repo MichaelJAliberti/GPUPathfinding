@@ -126,6 +126,7 @@ Grid::Grid(string filename){
 			getline(infile, line);
 			stringstream s2(line);
 			getline(s2, token, ':'); // remove padding
+			getline(s2, token, ' '); // remove padding
 			getline(s2, token); // name
 			aname = token;
 
