@@ -23,6 +23,7 @@ public:
 
 	// constructors
 	Agent();
+	Agent(const Agent& obj); // copy constructor
 	Agent(int start_x, int start_y, int end_x, int end_y);
 	Agent(int start_x, int start_y, int end_x, int end_y, string in_name);
 };
@@ -33,6 +34,14 @@ Agent::Agent(){
 	dx = 0;
 	dy = 0;
 	name = "default";
+}
+
+Agent::Agent(const Agent& obj){
+	sx = obj.sx;
+	sy = obj.sy;
+	dx = obj.dx;
+	dy = obj.dy;
+	name = obj.name;
 }
 
 Agent::Agent(int start_x, int start_y, int end_x, int end_y){
@@ -85,7 +94,13 @@ Grid::Grid(string filename){
 	string line, token, aname;
 	fstream infile;
 
+	num_agents = 0;
+
 	infile.open(filename);
+	if (!infile){
+		cout << "Cannot open file" << endl;
+		exit(1);
+	}
 
 	// Line Parser/load data
 	try{
@@ -95,6 +110,9 @@ Grid::Grid(string filename){
 		while (getline(infile, line)){
 			if (line.compare(0, 4, "map:") == 0)
 				break;
+
+			// increment agent count
+			num_agents++;
 			
 			// read in goal
 			stringstream s1(line);
@@ -108,6 +126,7 @@ Grid::Grid(string filename){
 			getline(infile, line);
 			stringstream s2(line);
 			getline(s2, token, ':'); // remove padding
+			getline(s2, token, ' '); // remove padding
 			getline(s2, token); // name
 			aname = token;
 
@@ -122,6 +141,7 @@ Grid::Grid(string filename){
 
 			// initialize agent
 			Agent bot(aso_x, aso_y, ades_x, ades_y, aname);
+			agents.push_back(bot);
 		}
 
 		// get dimensions
@@ -153,11 +173,7 @@ Grid::Grid(string filename){
 			y = stoi(token);
 
 			matrix[x + y*size] = -1; // obstacle to -1
-
-			//cout << "[" << x << ", " << y << "]" << endl;
 		}
-
-		//cout << "SIZE: " << size * size << endl;
 	}
 	catch (...){
 		cout << "Cannot parse file..." << endl << "SHUTTING DOWN" << endl;
