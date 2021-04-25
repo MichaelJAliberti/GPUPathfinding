@@ -13,13 +13,7 @@
 
 #define CPNS 3.0    /* Cycles per nanosecond -- Adjust to your computer, for example a 3.2 GhZ GPU, this would be 3.2 */
 
-#define GHOST 2   /* 2 extra rows/columns for "ghost zone". */
 
-#define A   0   /* coefficient of x^2 */
-#define B   900  /* coefficient of x */
-#define C   900  /* constant term */
-
-#define NUM_TESTS 2
 
 /* A, B, and C needs to be a multiple of your BLOCK_SIZE,
    total array size will be (GHOST + Ax^2 + Bx + C) */
@@ -44,11 +38,11 @@ typedef struct {
   data_t *data;
 } arr_rec, *arr_ptr;
 
-struct thread_data {
-  int thread_id;
-  int strip_num;
-  arr_ptr v;
-};
+struct Node {
+    int x;
+    int y;
+    struct Node* next;
+}
 
 /* Prototypes */
 arr_ptr new_array(long int len);
@@ -135,32 +129,6 @@ int main(int argc, char *argv[])
 
 /*********************************/
 
-/* Create 2D array of specified length per dimension */
-arr_ptr new_array(long int row_len)
-{
-  long int i;
-
-  /* Allocate and declare header structure */
-  arr_ptr result = (arr_ptr) malloc(sizeof(arr_rec));
-  if (!result) {
-    return NULL;  /* Couldn't allocate storage */
-  }
-  result->rowlen = row_len;
-
-  /* Allocate and declare array */
-  if (row_len > 0) {
-    data_t *data = (data_t *) calloc(row_len*row_len, sizeof(data_t));
-    if (!data) {
-      free((void *) result);
-      printf("\n COULDN'T ALLOCATE STORAGE \n", result->rowlen);
-      return NULL;  /* Couldn't allocate storage */
-    }
-    result->data = data;
-  }
-  else result->data = NULL;
-
-  return result;
-}
 
 /* Set row length of array */
 int set_arr_rowlen(arr_ptr v, long int row_len)
@@ -231,16 +199,32 @@ bool checkDiffusion(arr_ptr dataGrid, arr_ptr obstacleGrid){
     long int rowlen = get_arr_rowlen(dataGrid);
     data_t *data = get_array_start(dataGrid);
     data_t *obs = get_array_start(obstacleGrid);
-    bool flag = 1;
 
     for(i = 0; i < rowlen; i++){
         for(j = 0; j < rowlen; j++){
-            flag = !obs[i*rowlen+j] && (data[i*rowlen+j] > 0)
+            if(obs[i*rowlen+j] || (data[i*rowlen+j] <= 0)){return false;}
         }
-        if(!flag){return false;}
     }
-    return true
+    return true;
 }
 
 void traversePath(arr_ptr agentPath, arr_ptr dataGrid, int srcX, int srcY){
+    long int rowlen = get_arr_rowlen(dataGrid);
+    int i, x = srcX, y = srcY, arrsize = rowlen*rowlen;
+    data_t *data = get_array_start(dataGrid);
+    data_t *path = get_array_start(agentPath);
+    float currentSpot = data[srcX*rowlen+srcY];
+    float neighborMax;
+    Node* s
+
+    while(currentSpot != arrsize){
+        neighborMax = 0;
+        if(data[(x-1)*rowlen+y] > neighborMax){x--;}
+        if(data[(x+1)*rowlen+y] > neighborMax){x++;}
+        if(data[x*rowlen+y+1] > neighborMax){neighborMax=data[y++;}
+        if(data[x*rowlen+y-1] > neighborMax){neighborMax=data[y--;}
+
+
+
+    }
 }
