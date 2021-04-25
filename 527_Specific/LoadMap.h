@@ -5,155 +5,191 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef int data_t;
+
 /**************************************************************
 						AGENT CLASS
 **************************************************************/
 
-typedef double data_t;
-
-typedef struct{
-	data_t x;
-	data_t y;
-} point, point_ptr;
-
-typedef struct{
-	point start;
-	point dest;
+struct agent{
+	data_t sx;
+	data_t sy;
+	data_t dx;
+	data_t dy;
 	char* name;
-} agent, *agent_ptr;
+	struct agent* next;
+};
 
 /**************************************************************
 						GRID CLASS
 **************************************************************/
 
-class Grid{
-public:
-	// variables
+typedef struct{
 	int num_agents;
-	vector<Agent> agents;
+	struct agent* agents;
 	int size;
-	int* matrix;
+	data_t* diff_matrix;
+	data_t* obs_matrix;
+} grid;
 
-	// constructors
-	Grid(); // default
-	Grid(string filename);
-
-	// member functions
-	int PrintGrid();
-};
-
-Grid::Grid(){
-	num_agents = 0;
-	size = 0;
-	matrix = (int*) calloc(size * size, sizeof(int));
-}
-
-Grid::Grid(string filename){
+grid* LoadGrid(char* filename){
 	// Reads from YAML file to initialize grid
-	int i, j, mult;
-	int x, y, aso_x, aso_y, ades_x, ades_y;
-	string line, token, aname;
-	fstream infile;
 
-	num_agents = 0;
+	// Variable declarations
+	int i, j, mult, size;
+	int x, y, sx, sy, dx, dy;
+	FILE *fp;
+	char* line = NULL;
+	char* token;
+	char* name;
+	size_t line_size = 0;
+	struct agent* next_agent;
 
-	infile.open(filename);
-	if (!infile){
-		cout << "Cannot open file" << endl;
+	// Allocate grid
+	grid* example = (grid*) calloc(1, sizeof(grid));
+	example->num_agents = 0;
+
+	// Open file
+	fp = fopen(filename, "r");
+	if (!fp){
+		printf("Cannot open file\n");
 		exit(1);
 	}
 
 	// Line Parser/load data
-	try{
-		getline(infile, line); // agents
-
-		// handle agent info
-		while (getline(infile, line)){
-			if (line.compare(0, 4, "map:") == 0)
-				break;
-
-			// increment agent count
-			num_agents++;
-			
-			// read in goal
-			stringstream s1(line);
-			getline(s1, token, '['); // remove padding
-			getline(s1, token, ','); // first digit
-			ades_x = stoi(token);
-			getline(s1, token, ']'); // second digit
-			ades_y = stoi(token);
-
-			// read in name
-			getline(infile, line);
-			stringstream s2(line);
-			getline(s2, token, ':'); // remove padding
-			getline(s2, token, ' '); // remove padding
-			getline(s2, token); // name
-			aname = token;
-
-			// read in start
-			getline(infile, line);
-			stringstream s3(line);
-			getline(s3, token, '['); // remove padding
-			getline(s3, token, ','); // first digit
-			aso_x = stoi(token);
-			getline(s3, token, ']'); // second digit
-			aso_y = stoi(token);
-
-			// initialize agent
-			Agent bot(aso_x, aso_y, ades_x, ades_y, aname);
-			agents.push_back(bot);
-		}
-
-		// get dimensions
-		getline(infile, line);
-		stringstream ss(line);
-		getline(ss, token, '['); // remove padding
-		getline(ss, token, ','); // first digit
-		size = stoi(token);
-		getline(ss, token, ']'); // second digit
-
-		// initialize matrix w/ 0s
-		matrix = (int*) calloc(size * size, sizeof(int));
-		for (i = 0; i < size; i++){
-			mult = i*size;
-			for (j = 0; j < size; j++){
-				matrix[mult + j] = 0;
-			}
-		}
-
-		getline(infile, line); // remove padding
-
-		// Load obstacle info into matrix
-		while (getline(infile, line)){
-			stringstream ss(line);
-			getline(ss, token, '['); // remove padding
-			getline(ss, token, ','); // first digit
-			x = stoi(token);
-			getline(ss, token, ']'); // second digit
-			y = stoi(token);
-
-			matrix[x + y*size] = -1; // obstacle to -1
-		}
-	}
-	catch (...){
-		cout << "Cannot parse file..." << endl << "SHUTTING DOWN" << endl;
-		infile.close();
+	if (!getline(&line, &line_size, fp)){ // agents
+		printf("Invalid file\n");
 		exit(1);
 	}
 
-	infile.close();
+	// handle agent info
+	while (getline(&line, &line_size, fp)){
+		if (strncmp(line, "map:", 4) == 0){
+			break;
+		}
+		
+		// read in goal
+		token = strtok(line, "["); // remove padding
+		token = strtok(NULL, ", "); // first digit
+		dx = atoi(token);
+		token = strtok(NULL, "]"); // second digit
+		token = strcpy(token, token+1);
+		dy = atoi(token);
+
+		// read in name
+		if (!getline(&line, &line_size, fp)){
+			printf("Invalid file\n");
+			exit(1);
+		}
+		token = strtok(line, ":"); // remove padding
+		token = strtok(NULL, " "); // remove padding
+		name = strtok(NULL, " "); // read name
+
+		// read in start
+		if (!getline(&line, &line_size, fp)){
+			printf("Invalid file\n");
+			exit(1);
+		}
+		token = strtok(line, "["); // remove padding
+		token = strtok(NULL, ", "); // first digit
+		sx = atoi(token);
+		token = strtok(NULL, "]"); // second digit
+		token = strcpy(token, token+1);
+		sy = atoi(token);
+
+		if (!example->num_agents){
+			example->agents = (struct agent*) calloc(1, sizeof(struct agent));
+			example->agents->dx = dx;
+			example->agents->dy = dy;
+			example->agents->sx = sx;
+			example->agents->sy = sy;
+			example->agents->name = name;
+			example->agents->next = NULL;
+			next_agent = example->agents;
+		}
+		else{
+			next_agent->next = (struct agent*) calloc(1, sizeof(struct agent));
+			next_agent = next_agent->next;
+			next_agent->dx = dx;
+			next_agent->dy = dy;
+			next_agent->sx = sx;
+			next_agent->sy = sy;
+			next_agent->name = name;
+			next_agent->next = NULL;
+		}
+
+		// increment agent count
+		example->num_agents++;
+	}
+
+	// get dimensions
+	if (!getline(&line, &line_size, fp)){
+		printf("Invalid file\n");
+		exit(1);
+	}
+	token = strtok(line, "["); // remove padding
+	token = strtok(NULL, ", "); // first digit
+	size = atoi(token);
+	example->size = size;
+	token = strtok(NULL, "]"); // second digit
+	token = strcpy(token, token+1);
+
+	// initialize obstacle matrix w/ 1s
+	example->obs_matrix = (data_t*) calloc(size * size, sizeof(data_t));
+	for (i = 0; i < size; i++){
+		mult = i*size;
+		for (j = 0; j < size; j++){
+			example->obs_matrix[mult + j] = 1;
+		}
+	}
+
+	// initialize diffusion matrix w/ 1s
+	example->diff_matrix = (data_t*) calloc(size * size, sizeof(data_t));
+	for (i = 0; i < size; i++){
+		mult = i*size;
+		for (j = 0; j < size; j++){
+			example->diff_matrix[mult + j] = 0;
+		}
+	}
+
+	if (!getline(&line, &line_size, fp)){
+		printf("Invalid file\n");
+		exit(1);
+	} // remove padding
+
+	// Load obstacle info into matrix
+	while (getline(&line, &line_size, fp) > 1){
+		token = strtok(line, "["); // remove padding
+		token = strtok(NULL, ", "); // first digit
+		x = atoi(token);
+		token = strtok(NULL, "]"); // second digit
+		token = strcpy(token, token+1);
+		y = atoi(token);
+
+		example->obs_matrix[x + y*size] = 0; // obstacle to 0
+	}
+
+	fclose(fp);
+
+	return example;
 }
 
-int Grid::PrintGrid(){
+int PrintGrid(grid* example){
 	int i, j, mult;
+	struct agent* next_agent = example->agents;
+	int size = example->size;
 
 	for (i = 0; i < size; i++){
 		mult = i*size;
 		for (j = 0; j < size; j++){
-			cout << matrix[mult + j] << ",\t";
+			printf("%d,\t", example->obs_matrix[mult + j]);
 		}
-		cout << endl;
+		printf("\n");
+	}
+
+	while (next_agent != NULL){
+		printf("[%d, %d]\n", next_agent->sx, next_agent->sy);
+		next_agent = next_agent->next;
 	}
 
 	return 0;
