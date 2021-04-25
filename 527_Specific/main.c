@@ -208,23 +208,28 @@ bool checkDiffusion(arr_ptr dataGrid, arr_ptr obstacleGrid){
     return true;
 }
 
-void traversePath(arr_ptr agentPath, arr_ptr dataGrid, int srcX, int srcY){
+void traversePath(arr_ptr dataGrid, int srcX, int srcY){
     long int rowlen = get_arr_rowlen(dataGrid);
     int i, x = srcX, y = srcY, arrsize = rowlen*rowlen;
     data_t *data = get_array_start(dataGrid);
-    data_t *path = get_array_start(agentPath);
-    float currentSpot = data[srcX*rowlen+srcY];
+    float currentSpot;
     float neighborMax;
-    Node* s
+    int pathLength = 0;
 
+    currentSpot = data[x*rowlen+y]
     while(currentSpot != arrsize){
         neighborMax = 0;
-        if(data[(x-1)*rowlen+y] > neighborMax){x--;}
-        if(data[(x+1)*rowlen+y] > neighborMax){x++;}
-        if(data[x*rowlen+y+1] > neighborMax){neighborMax=data[y++;}
-        if(data[x*rowlen+y-1] > neighborMax){neighborMax=data[y--;}
+        if(data[(x-1)*rowlen+y] > neighborMax){x--];}
+        if(data[(x+1)*rowlen+y] > neighborMax){x++];}
+        if(data[x*rowlen+y+1] > neighborMax){neighborMax=data[y++];}
+        if(data[x*rowlen+y-1] > neighborMax){neighborMax=data[y--];}
+
+        currentSpot = data[x*rowlen+y];
+        outfile << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
+        pathLength++;
 
 
 
     }
+    outfile << "Path Length: " << pathLength << endl;
 }
