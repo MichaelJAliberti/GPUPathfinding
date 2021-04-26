@@ -155,6 +155,7 @@ grid* LoadGrid(char* filename){
 			example->diff_matrix[mult + j] = 0;
 		}
 	}
+	example->diff_matrix[example->dx + example->dy * size] = size * size;
 
 	if (!getline(&line, &line_size, fp)){
 		printf("Invalid file\n");
@@ -186,16 +187,16 @@ int PrintGrid(grid* example){
 	for (i = 0; i < size; i++){
 		mult = i*size;
 		for (j = 0; j < size; j++){
-			printf("%d,\t", example->obs_matrix[mult + j]);
+			printf("%d,\t", example->diff_matrix[mult + j]);
 		}
 		printf("\n");
 	}
-/*
+
 	while (next_agent != NULL){
 		printf("[%d, %d]\n", next_agent->sx, next_agent->sy);
 		next_agent = next_agent->next;
 	}
-*/
+
 	return 0;
 }
 
