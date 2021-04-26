@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef int data_t;
+typedef double data_t;
 
 /**************************************************************
 						AGENT CLASS
@@ -13,9 +13,9 @@ typedef int data_t;
 
 struct agent{
 	data_t sx;
-	data_t sy;
-	data_t dx;
-	data_t dy;
+	int sy;
+	int dx;
+	int dy;
 	char* name;
 	struct agent* next;
 };
@@ -28,8 +28,8 @@ typedef struct{
 	int num_agents;
 	struct agent* agents;
 	int size;
-	data_t dx;
-	data_t dy;
+	int dx;
+	int dy;
 	data_t* diff_matrix;
 	data_t* obs_matrix;
 } grid;
@@ -155,7 +155,7 @@ grid* LoadGrid(char* filename){
 			example->diff_matrix[mult + j] = 0;
 		}
 	}
-	example->diff_matrix[example->dx + example->dy * size] = size * size;
+	example->diff_matrix[example->dx + example->dy * size] = size * size * size * size * size;
 
 	if (!getline(&line, &line_size, fp)){
 		printf("Invalid file\n");
@@ -181,22 +181,22 @@ grid* LoadGrid(char* filename){
 
 int PrintGrid(grid* example){
 	int i, j, mult;
-	struct agent* next_agent = example->agents;
+	//struct agent* next_agent = example->agents;
 	int size = example->size;
 
 	for (i = 0; i < size; i++){
 		mult = i*size;
 		for (j = 0; j < size; j++){
-			printf("%d,\t", example->diff_matrix[mult + j]);
+			printf("%.0f,\t", example->diff_matrix[mult + j]);
 		}
 		printf("\n");
 	}
-
+/*
 	while (next_agent != NULL){
 		printf("[%d, %d]\n", next_agent->sx, next_agent->sy);
 		next_agent = next_agent->next;
 	}
-
+*/
 	return 0;
 }
 

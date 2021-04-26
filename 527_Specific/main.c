@@ -1,6 +1,5 @@
 /****************************************************************************
 
-
    gcc -O1 main.c -o main
 
 */
@@ -20,11 +19,9 @@ int main(int argc, char *argv[])
     grid* myGrid = LoadGrid("map_8by8_obst12_agents1_ex0.yaml"); //this creates the grid to use
 
     /*this runs the entire diffusion process and will run until the graph is fully diffused.*/
-    PrintGrid(myGrid);
     diffuse(myGrid);
     PrintGrid(myGrid);
-    traversePath(myGrid);
-
+    //traversePath(myGrid);
 
 } /* end main */
 
@@ -38,19 +35,23 @@ void diffuse(grid* g)
   int rowlen = g->size;
   data_t *data = g->diff_matrix;
   data_t *obstacles = g->obs_matrix;
-  double newD;
+  data_t newD;
   int destX = g->dx, destY = g->dy;
   int sum;
 
+  int large = rowlen*rowlen*rowlen*rowlen*rowlen;
+
   while (!checkDiffusion(g)) {
-    data[destX*rowlen+destY] = rowlen;
+    PrintGrid(g);
+    printf("\n");
     for (i = 0; i < rowlen; i++) {
       for (j = 0; j < rowlen; j++) {
+        data[destY*rowlen+destX] = large;
         //newD = .25 * (data[(i-1)*rowlen+j] + data[(i+1)*rowlen+j] + data[i*rowlen+j+1] + data[i*rowlen+j-1]) * obstacles[destX*rowlen+destY];
         sum = getNeighborAvg(g, i, j);
-        newD = sum * obstacles[destX*rowlen+destY];
-        printf("Old value: %d, New Value: %d\n\n", data[i*rowlen+j], newD);
-        data[i*rowlen+j] = newD;
+        newD = sum * obstacles[j*rowlen+i];
+        //printf("Old value: %d, New Value: %d\n\n", data[j*rowlen+i], newD);
+        data[j*rowlen+i] = newD;
       }
     }
   }
@@ -64,7 +65,7 @@ int checkDiffusion(grid* g){
     data_t *obstacles = g->obs_matrix;
     for(i = 0; i < rowlen; i++){
         for(j = 0; j < rowlen; j++){
-            if(!obstacles[i*rowlen+j] && (data[i*rowlen+j] <= 0)){return 0;}
+            if(obstacles[i*rowlen+j] && (data[i*rowlen+j] <= 0)){return 0;}
         }
     }
     return 1;
@@ -82,7 +83,7 @@ void traversePath(grid* g){
     FILE *fp;
     fp = fopen("diff_output.txt","w+");
 
-    currentSpot = data[x*rowlen+y];
+    currentSpot = data[y*rowlen+x];
     while(currentSpot != arrsize){
         neighborMax = 0;
         if(data[(x-1)*rowlen+y] > neighborMax){x--;}
@@ -90,12 +91,10 @@ void traversePath(grid* g){
         if(data[x*rowlen+y+1] > neighborMax){y++;}
         if(data[x*rowlen+y-1] > neighborMax){y--;}
 
-        currentSpot = data[x*rowlen+y];
+        currentSpot = data[y*rowlen+x];
         //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
         fprintf(fp, "- [%d,%d] | D = %f", (x)%rowlen, (y)/rowlen, currentSpot);
         pathLength++;
-
-
 
     }
     //fp << "Path Length: " << pathLength << endl;
@@ -108,18 +107,12 @@ int getNeighborAvg(grid* g, int ax, int ay){
     int runsum = 0;
     int rowlen = g->size;
     int numNeighbors = 0;
-    printf("Rowlen: %d\n", g->size);
     data_t *data = g->diff_matrix;
-    printf("Top: %d\n",data[ax*rowlen+ay-1]);
-    printf("Bottom: %d\n",data[ax*rowlen+ay+1]);
-    printf("Left: %d\n",data[(ax-1)*rowlen+ay]);
-    printf("Right: %d\n",data[(ax+1)*rowlen+ay]);
-    if(ax > 0){runsum += data[ax*rowlen+ay-1]; printf("Adding top neighbor %d to runsum\n", data[ax*rowlen+ay-1]); numNeighbors++;}
-    if(ax < rowlen){runsum += data[ax*rowlen+ay+1]; printf("Adding bottom neighbor %d to runsum\n", data[ax*rowlen+ay+1]); numNeighbors++;}
-    if(ay > 0){runsum += data[(ax-1)*rowlen+ay]; printf("Adding left neighbor %d to runsum\n", data[(ax-1)*rowlen+ay]); numNeighbors++;}
-    if(ay < rowlen){runsum += data[(ax+1)*rowlen+ay]; printf("Adding right neighbor %d to runsum\n", data[(ax+1)*rowlen+ay]); numNeighbors++;}
-    PrintGrid(g);
-    printf("[%d,%d] Runsum: %d\n\n",ax,ay,runsum);
+    //printf("Analyzing point [%d, %d]:\n", ax, ay);
+    if(ax > 0){runsum += data[ay*rowlen+ax-1]; /*printf("\tAdding Left neighbor %d to runsum\n", data[ax*rowlen+ay-1]);*/ numNeighbors++;}
+    if(ax < rowlen-1){runsum += data[ay*rowlen+ax+1]; /*printf("\tAdding Right neighbor %d to runsum\n", data[ax*rowlen+ay+1]);*/ numNeighbors++;}
+    if(ay > 0){runsum += data[(ay-1)*rowlen+ax]; /*printf("\tAdding Top neighbor %d to runsum\n", data[(ax-1)*rowlen+ay]);*/ numNeighbors++;}
+    if(ay < rowlen-1){runsum += data[(ay+1)*rowlen+ax]; /*printf("\tAdding Bottom neighbor %d to runsum\n", data[(ax+1)*rowlen+ay]);*/ numNeighbors++;}
 
     return runsum/numNeighbors;
 }
