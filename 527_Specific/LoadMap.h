@@ -28,6 +28,8 @@ typedef struct{
 	int num_agents;
 	struct agent* agents;
 	int size;
+	data_t dx;
+	data_t dy;
 	data_t* diff_matrix;
 	data_t* obs_matrix;
 } grid;
@@ -99,6 +101,8 @@ grid* LoadGrid(char* filename){
 
 		if (!example->num_agents){
 			example->agents = (struct agent*) calloc(1, sizeof(struct agent));
+			example->dx = dx;
+			example->dy = dy;
 			example->agents->dx = dx;
 			example->agents->dy = dy;
 			example->agents->sx = sx;
@@ -186,12 +190,12 @@ int PrintGrid(grid* example){
 		}
 		printf("\n");
 	}
-
+/*
 	while (next_agent != NULL){
 		printf("[%d, %d]\n", next_agent->sx, next_agent->sy);
 		next_agent = next_agent->next;
 	}
-
+*/
 	return 0;
 }
 
