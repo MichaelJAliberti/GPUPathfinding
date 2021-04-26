@@ -69,7 +69,7 @@ grid* LoadGrid(char* filename){
 		if (strncmp(line, "map:", 4) == 0){
 			break;
 		}
-		
+
 		// read in goal
 		token = strtok(line, "["); // remove padding
 		token = strtok(NULL, ", "); // first digit
