@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include "LoadMap.h"
 #include <pthread.h>
 
 #define CPNS 3.0    /* Cycles per nanosecond -- Adjust to your computer, for example a 3.2 GhZ GPU, this would be 3.2 */
@@ -42,21 +43,12 @@ struct Node {
     int x;
     int y;
     struct Node* next;
-}
+};
 
 /* Prototypes */
-arr_ptr new_array(long int len);
-int set_arr_rowlen(arr_ptr v, long int index);
-long int get_arr_rowlen(arr_ptr v);
-int init_array(arr_ptr v, long int len);
-int init_array_rand(arr_ptr v, long int len);
-int print_array(arr_ptr v);
-
-void SOR(arr_ptr v);
-void SOR_rows(arr_ptr v);
-void SOR_columns(arr_ptr v);
-void row_work(void *threadarg);
-void column_work(void *threadarg);
+void diffuse(arr_ptr dataGrid, arr_ptr obstacleGrid);
+bool checkDiffusion(arr_ptr dataGrid, arr_ptr obstacleGrid);
+void traversePath(arr_ptr dataGrid, int srcX, int srcY);
 
 /* -=-=-=-=- Time measurement by clock_gettime() -=-=-=-=- */
 /*
@@ -126,48 +118,6 @@ int main(int argc, char *argv[])
 
 
 } /* end main */
-
-/*********************************/
-
-
-/* Set row length of array */
-int set_arr_rowlen(arr_ptr v, long int row_len)
-{
-  v->rowlen = row_len;
-  return 1;
-}
-
-/* Return row length of array */
-long int get_arr_rowlen(arr_ptr v)
-{
-  return v->rowlen;
-}
-
-/* print all elements of an array */
-int print_array(arr_ptr v)
-{
-  long int i, j, row_len;
-
-  row_len = v->rowlen;
-  printf("row length = %ld\n", row_len);
-  for (i = 0; i < row_len; i++) {
-    for (j = 0; j < row_len; j++) {
-      printf("%.4f ", (data_t)(v->data[i*row_len+j]));
-    }
-    printf("\n");
-  }
-}
-
-data_t *get_array_start(arr_ptr v)
-{
-  return v->data;
-}
-
-double fRand(double fMin, double fMax)
-{
-  double f = (double)random() / RAND_MAX;
-  return fMin + f * (fMax - fMin);
-}
 
 /************************************/
 
