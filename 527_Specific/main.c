@@ -61,7 +61,6 @@ int checkDiffusion(grid* g){
     int rowlen = g->size;
     data_t *data = g->diff_matrix;
     data_t *obstacles = g->obs_matrix;
-    PrintGrid(g);
     for(i = 0; i < rowlen; i++){
         for(j = 0; j < rowlen; j++){
             if(!obstacles[i*rowlen+j] && (data[i*rowlen+j] <= 0)){return 0;}
@@ -104,12 +103,18 @@ void traversePath(grid* g){
 }
 
 float getNeighborSum(grid* g, int ax, int ay){
+
     float runsum = 0;
     int rowlen = g->size;
+    printf("Rowlen: %f\n", g->size);
     data_t *data = g->diff_matrix;
+    printf("Top: %f\n",data[ax*rowlen+ay-1]);
+    printf("Bottom: %f\n",data[ax*rowlen+ay+1]);
+    printf("Left: %f\n",data[(ax-1)*rowlen+ay]);
+    printf("Right: %f\n",data[(ax+1)*rowlen+ay]);
     if(ax > 0){runsum += data[ax*rowlen+ay-1]; printf("Adding top neighbor %f to runsum\n", data[ax*rowlen+ay-1]);}
     if(ax < rowlen){runsum += data[ax*rowlen+ay+1]; printf("Adding bottom neighbor %f to runsum\n", data[ax*rowlen+ay+1]);}
-    if(ay > 0){runsum += data[(ax-1)*rowlen+ay];printf("Adding left neighbor %f to runsum\n", data[(ax-1)*rowlen+ay]);}
+    if(ay > 0){runsum += data[(ax-1)*rowlen+ay]; printf("Adding left neighbor %f to runsum\n", data[(ax-1)*rowlen+ay]);}
     if(ay < rowlen){runsum += data[(ax+1)*rowlen+ay]; printf("Adding right neighbor %f to runsum\n", data[(ax+1)*rowlen+ay]);}
     printf("[%d,%d] Runsum: %2f\n\n",ax,ay,runsum);
     return runsum;
