@@ -4,12 +4,12 @@ paths:
     - [0, 0]
     - [0, 1]
     - [1, 1]
--	name: agent1
+-   name: agent1
     path:
     - [1, 1]
     - [0, 1]
     - [0, 2]
--	name: agent0
+-   name: agent0
     path:
     - [0, 0]
     - [1, 0]
