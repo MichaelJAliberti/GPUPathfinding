@@ -29,35 +29,26 @@ int fdiff(int first, int second, int side_size)
 {
 	return (abs(first%side_size - second%side_size) + abs(first/side_size - second/side_size));
 }
-//cout << "dst [" << (dst)%side_size << ", " << (dst)/side_size << "]" << endl;
 
 vector<int> a_star(string grid_name, int num_agent)
 {
 	
-	//Grid Initialization
+	//Grid Declaration & Initialization
 	Grid map(grid_name);
 	
-	map.PrintGrid();
-	
-	//size variables
+	//Size variables Declaration & Initialization
 	int side_size = map.size;
 	int size = side_size * side_size;
 	
-	//dijkstra variables Declaration
-	//int dist[size];
-	//bool sptSet[size];
+	//Heap Nodes Initialization
 	nodeitem Nodes[20000]; // The vertices of the graph
 	
-	//vector<int> pred(size, -1);
-	//vector<int> path;
-	//int preditor;
-	//int counter;
+	//A * Star variables Declaration
 	int src;
 	int dst;
-	
 	bool sptSet[size];
 	
-	//Agent Initialization
+	//Agent Declaration & Initialization
 	Agent iter;
 	iter = map.agents[num_agent];
 	
@@ -65,8 +56,8 @@ vector<int> a_star(string grid_name, int num_agent)
 	src = iter.sx + iter.sy * side_size;
 	dst = iter.dx + iter.dy * side_size;
 	
-
-	for (int i=0;i<size;i++){  // Initialize nodes
+	//Heap node Initialization
+	for (int i=0;i<size;i++){  
 		Nodes[i].id = i;
 		Nodes[i].dist = LARGE;
 		Nodes[i].key = LARGE + fdiff(i, dst, side_size);
@@ -75,54 +66,35 @@ vector<int> a_star(string grid_name, int num_agent)
 		sptSet[i] = false;
 	}
 	
-	
-	
-	//Dijkstra's source Initialization
-	//pred[src] = src;
-	//dist[src] = 0;
-	//int min = INF;
-	//int u;
-
-
-
+	// Heap Declaration & Initialization
 	Heap<nodeitem> *thisHeap;
 	thisHeap = new Heap<nodeitem>;
-	//struct arc *edge;
 	nodeitem *u;
 	int v;
 
 	
-
-	for (int i = 0; i <size; i++) //insert all nodes into Heap
+	//Insert all nodes into Heap
+	for (int i = 0; i <size; i++) 
 	{
 	 thisHeap->insert(&Nodes[i]);
 	}
 	
+	//Source Initialization and key decrease in Heap
 	Nodes[src].key = fdiff(src, dst, side_size);
-	cout << "Nodes[src].key: " << Nodes[src].key << endl;
-	cout << "Nodes[src].id: " << (Nodes[src].id)%side_size << ", " << (Nodes[src].id)/side_size << "]" << endl;
-	cout << "Nodes[dst].key: " << Nodes[dst].key << endl;
 	Nodes[src].dist = 0;
-	//sptSet[src] = true;
 	thisHeap->decreaseKey(Nodes[src].position, Nodes[src].key);
 	
-	cout << "dst [" << (dst)%side_size << ", " << (dst)/side_size << "]" << endl;
-	cout << "src [" << (src)%side_size << ", " << (src)/side_size << "]" << endl;
-	
 
-
-	while(!thisHeap->IsEmpty())  //until heap is empty
+	//Loop until the Heap is Empty
+	while(!thisHeap->IsEmpty())  
 	{
 		u = thisHeap->remove_min();
-		
-		cout << "u - [" << (u->id)%side_size << ", " << (u->id)/side_size << "]" << endl;
-		
 		sptSet[u->id] = true;
+		
+		//If current node is dst then break
 		if (u->id == dst)
 			break;
-			
-		
-		
+					
 		
 		//The node to the RIGHT
 			v = u->id + 1;
@@ -133,7 +105,6 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].dist = 1 + u->dist;
 						Nodes[v].key = (1 + u->dist) + fdiff(v,dst, side_size);
 						Nodes[v].Pre = u->id;
-						cout << "- [" << (v)%side_size << ", " << (v)/side_size << "] Right" << endl;
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
 			//The node to the LEFT
@@ -145,7 +116,6 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].dist = 1 + u->dist;
 						Nodes[v].key = (1 + u->dist) + fdiff(v,dst, side_size);
 						Nodes[v].Pre = u->id;
-						cout << "- [" << (v)%side_size << ", " << (v)/side_size << "] Left" << endl;
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
 			//The node to the TOP
@@ -157,7 +127,6 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].dist = 1 + u->dist;
 						Nodes[v].key = (1 + u->dist) + fdiff(v,dst, side_size);
 						Nodes[v].Pre = u->id;
-						cout << "- [" << (v)%side_size << ", " << (v)/side_size << "] Top" << endl;
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
 			//The node to the BOTTOM
@@ -169,36 +138,13 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].dist = 1 + u->dist;
 						Nodes[v].key = (1 + u->dist) + fdiff(v,dst, side_size);
 						Nodes[v].Pre = u->id;
-						cout << "- [" << (v)%side_size << ", " << (v)/side_size << "] Down" << endl;
-						//cout << "id: " << Nodes[v].id << endl;
-						//cout << "key: " << Nodes[v].key << endl;
+
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
-			cout << "v: " << v << endl;
-		
-		
-		
-	 /*edge = u->first;
-	 while(edge != NULL)
-	 {
-	   
-	   //v = edge->end;
-	   
-	   if (Nodes[v].dist > (1 + u->dist))  //if dist is 
-	   {
-		Nodes[v].dist = 1 + u->key;
-		Nodes[v].key = (1 + u->key) + fdiff(v,dst);
-		Nodes[v].Pre = u->id;
-		thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);   
-	   }
-	   edge = edge->next;
 
-	 }*/
-	 
-	 
 	}
 	
-	cout << "Printing: " << endl;
+
 	
 	int preditor = dst;
 	int counter = 0; // length of path
@@ -209,7 +155,6 @@ vector<int> a_star(string grid_name, int num_agent)
 		preditor = Nodes[preditor].Pre;		
 		path.push_back(preditor);
 		counter++;
-		//cout << preditor << " -> " << endl;
 		cout << "- [" << (preditor)%side_size << ", " << (preditor)/side_size << "]" << endl;
 	}
 
