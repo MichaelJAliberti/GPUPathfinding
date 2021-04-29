@@ -70,7 +70,8 @@ int dijkstra(string grid_name)
 		sptSet[src] = true;
 
 		// write to output file
-		token = iter.name.erase(iter.name.length()-1, 1);
+		stringstream s2(iter.name);
+		getline(s2, token, '\n');
 		outfile << "-   name: "<< token << endl;
 		outfile << "    nodes:" << endl;
 		counter = 0;
