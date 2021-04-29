@@ -36,7 +36,7 @@ int dijkstra(string grid_name)
 	stringstream s1(grid_name);
 	string token;
 	getline(s1, token, '.');
-	token += "_dijkstra.yaml";
+	token += "_path_file.yaml";
 	ofstream outfile(token);
 	outfile << "paths:" << endl;
 
@@ -69,21 +69,10 @@ int dijkstra(string grid_name)
 		q.push(src);
 		sptSet[src] = true;
 
-		// write to output file
-		token = iter.name.erase(iter.name.length()-1, 1);
-		outfile << "-   name: "<< token << endl;
-		outfile << "    nodes:" << endl;
-		counter = 0;
-
 		while (!q.empty()) {
 
 			u = q.front();
 			q.pop();
-			
-			counter++;
-	        outfile << "    - [" << u%side_size << ", " << u/side_size << "]" << endl;
-
-	        if (u == dst) break;
 	  
 			//Since the data structure is a grid, there are only 4 adjacent nodes to check
 
@@ -132,8 +121,6 @@ int dijkstra(string grid_name)
 						q.push(v);
 					}
 		}
-
-		outfile << "    number: " << counter << endl;
 		
 		//Find the shortest path from the pred[]
 		preditor = dst;
@@ -147,17 +134,20 @@ int dijkstra(string grid_name)
 			counter++;
 		}
 
+		outfile << "-   " << "name: " << iter.name << endl;
+		outfile << "    " << "length: " << counter << endl;
 		outfile << "    " << "path:" << endl;
-		for (auto i = path.begin(); i != path.end(); ++i){
+		for (auto i = path.rbegin(); i != path.rend(); ++i){
 			outfile << "    ";
 	        outfile << "- [" << (*i)%side_size << ", " << (*i)/side_size << "]" << endl;
 		}
-		outfile << "    " << "length: " << counter << endl;
 	}
 
     outfile.close();
 
     return 0;
 } 
+
+
 
 #endif
