@@ -147,7 +147,7 @@ int dijkstra(string grid_name)
 		}
 
 		outfile << "    " << "path:" << endl;
-		for (auto i = path.rbegin(); i != path.rend(); ++i){
+		for (auto i = path.begin(); i != path.end(); ++i){
 			outfile << "    ";
 	        outfile << "- [" << (*i)%side_size << ", " << (*i)/side_size << "]" << endl;
 		}
