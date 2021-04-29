@@ -18,11 +18,11 @@ import yaml
 
 
 # Reading in agent and obstacle data for graph initialization
-with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_32by32_obst204_agents100_ex99.yaml') as initMap:
+with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_8by8_obst12_agents10_ex90.yaml') as initMap:
     data = yaml.safe_load(initMap)
-with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_32by32_obst204_agents100_ex99_astar.yaml') as pathMap:
+with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_8by8_obst12_agents10_ex90_astar.yaml') as pathMap:
     astar_pathData = yaml.safe_load(pathMap)
-with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_32by32_obst204_agents100_ex99_dijkstra.yaml') as pathMap:
+with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_8by8_obst12_agents10_ex90_dijkstra.yaml') as pathMap:
     dijkstra_pathData = yaml.safe_load(pathMap)
 
 num_agents = len(data['agents'])
