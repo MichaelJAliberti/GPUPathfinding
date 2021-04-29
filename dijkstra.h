@@ -38,6 +38,7 @@ int dijkstra(string grid_name)
 	getline(s1, token, '.');
 	token += "_dijkstra.yaml";
 	ofstream outfile(token);
+	outfile << "paths:" << endl;
 
 	// loop through agents with dijkstras
 	for (auto k = map.agents.begin(); k != map.agents.end(); ++k){
@@ -70,7 +71,7 @@ int dijkstra(string grid_name)
 
 		// write to output file
 		token = iter.name.erase(iter.name.length()-1, 1);
-		outfile << token << ":" << endl;
+		outfile << "-   name: "<< token << endl;
 		outfile << "    nodes:" << endl;
 		counter = 0;
 
