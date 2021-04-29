@@ -2,7 +2,7 @@
 
 ## EC504 Spring 2021
 
-### Group Members: Michael Aliberti, Isaac Fleur-Chapman and Dmitry Zimin
+#### Group Members: Michael Aliberti, Isaac Fleur-Chapman and Dmitry Zimin
 
 ---
 
