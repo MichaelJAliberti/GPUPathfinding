@@ -30,7 +30,7 @@ int fdiff(int first, int second, int side_size)
 	return (abs(first%side_size - second%side_size) + abs(first/side_size - second/side_size));
 }
 
-vector<int> a_star(string grid_name, int num_agent)
+int a_star(string grid_name)
 {
 	
 	//Grid Declaration & Initialization
@@ -40,63 +40,80 @@ vector<int> a_star(string grid_name, int num_agent)
 	int side_size = map.size;
 	int size = side_size * side_size;
 	
-	//Heap Nodes Initialization
-	nodeitem Nodes[20000]; // The vertices of the graph
-	
 	//A * Star variables Declaration
 	int src;
 	int dst;
 	bool sptSet[size];
+	int counter;
 	
 	//Agent Declaration & Initialization
-	Agent iter;
-	iter = map.agents[num_agent];
-	
-	//source and destination from the Agent
-	src = iter.sx + iter.sy * side_size;
-	dst = iter.dx + iter.dy * side_size;
-	
-	//Heap node Initialization
-	for (int i=0;i<size;i++){  
-		Nodes[i].id = i;
-		Nodes[i].dist = LARGE;
-		Nodes[i].key = LARGE + fdiff(i, dst, side_size);
-		Nodes[i].Pre = -1;
-		Nodes[i].position = -1;
-		sptSet[i] = false;
-	}
-	
-	// Heap Declaration & Initialization
-	Heap<nodeitem> *thisHeap;
-	thisHeap = new Heap<nodeitem>;
-	nodeitem *u;
-	int v;
+	Agent iter = map.agents[0];
 
-	
-	//Insert all nodes into Heap
-	for (int i = 0; i <size; i++) 
-	{
-	 thisHeap->insert(&Nodes[i]);
-	}
-	
-	//Source Initialization and key decrease in Heap
-	Nodes[src].key = fdiff(src, dst, side_size);
-	Nodes[src].dist = 0;
-	thisHeap->decreaseKey(Nodes[src].position, Nodes[src].key);
-	
+	// Prepare output file
+	stringstream s1(grid_name);
+	string token;
+	getline(s1, token, '.');
+	token += "_astar.yaml";
+	ofstream outfile(token);
 
-	//Loop until the Heap is Empty
-	while(!thisHeap->IsEmpty())  
-	{
-		u = thisHeap->remove_min();
-		sptSet[u->id] = true;
+	// loop through agents with a_star
+	for (auto k = map.agents.begin(); k != map.agents.end(); ++k){
 		
-		//If current node is dst then break
-		if (u->id == dst)
-			break;
-					
+		// Agent declaration
+		iter = *k;
+
+		// Source and destination from the Agent
+		src = iter.sx + iter.sy * side_size;
+		dst = iter.dx + iter.dy * side_size;
 		
-		//The node to the RIGHT
+		// Heap node Initialization
+		nodeitem* Nodes = (nodeitem*) calloc(size, sizeof(nodeitem));
+		for (int i=0;i<size;i++){  
+			Nodes[i].id = i;
+			Nodes[i].dist = LARGE;
+			Nodes[i].key = LARGE + fdiff(i, dst, side_size);
+			Nodes[i].Pre = -1;
+			Nodes[i].position = -1;
+			sptSet[i] = false;
+		}
+		
+		// Heap Declaration & Initialization
+		Heap<nodeitem> *thisHeap;
+		nodeitem *u;
+		int v;
+		
+		// Insert all nodes into Heap
+		thisHeap = new Heap<nodeitem>;
+		for (int i = 0; i <size; i++) 
+		{
+			thisHeap->insert(&Nodes[i]);
+		}
+		
+		// Source Initialization and key decrease in Heap
+		Nodes[src].key = fdiff(src, dst, side_size);
+		Nodes[src].dist = 0;
+		thisHeap->decreaseKey(Nodes[src].position, Nodes[src].key);
+
+		// write to output file
+		token = iter.name.erase(iter.name.length()-1, 1);
+		outfile << token << ":" << endl;
+		outfile << "    nodes:" << endl;
+		counter = 0;
+
+		// Loop until the Heap is Empty
+		while(!thisHeap->IsEmpty())  
+		{
+			u = thisHeap->remove_min();
+			sptSet[u->id] = true;
+
+			counter++;
+	        outfile << "    - [" << (u->id)%side_size << ", " << (u->id)/side_size << "]" << endl;
+			
+			// If current node is dst then break
+			if (u->id == dst)
+				break;		
+
+			// The node to the RIGHT
 			v = u->id + 1;
 			if (v < size && v >= 0)
 				if (!(v % (side_size) == 0) && !sptSet[v] && map.matrix[v] == 0  
@@ -107,7 +124,7 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].Pre = u->id;
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
-			//The node to the LEFT
+			// The node to the LEFT
 			v = u->id - 1;
 			if (v < size && v >= 0)
 				if (!(v % (side_size) == side_size - 1) && !sptSet[v] && map.matrix[v] == 0 
@@ -118,7 +135,7 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].Pre = u->id;
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
-			//The node to the TOP
+			// The node to the TOP
 			v = u->id - side_size;
 			if (v < size && v >= 0)
 				if ((v > -1)  && map.matrix[v] == 0 && !sptSet[v] 
@@ -129,7 +146,7 @@ vector<int> a_star(string grid_name, int num_agent)
 						Nodes[v].Pre = u->id;
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
-			//The node to the BOTTOM
+			// The node to the BOTTOM
 			v = u->id + side_size;
 			if (v < size && v >= 0 )
 				if (v < size && !(u->id / (side_size) == side_size - 1) &&!sptSet[v] && map.matrix[v] == 0 
@@ -141,26 +158,33 @@ vector<int> a_star(string grid_name, int num_agent)
 
 						thisHeap->decreaseKey(Nodes[v].position, Nodes[v].key);  
 					}
+		}
 
-	}
-	
-
-	
-	int preditor = dst;
-	int counter = 0; // length of path
-	vector<int> path;
-	path.push_back(preditor);
-	while (preditor != src && counter < 50)
-	{
-		preditor = Nodes[preditor].Pre;		
+		outfile << "    number: " << counter << endl;
+		
+		int preditor = dst;
+		int counter = 0; // length of path
+		vector<int> path;
 		path.push_back(preditor);
-		counter++;
-		cout << "- [" << (preditor)%side_size << ", " << (preditor)/side_size << "]" << endl;
+		while (preditor != src && counter < 50)
+		{
+			preditor = Nodes[preditor].Pre;		
+			path.push_back(preditor);
+			counter++;
+		}
+
+		outfile << "    " << "path:" << endl;
+		for (auto i = path.begin(); i != path.end(); ++i){
+			outfile << "    ";
+	        outfile << "- [" << (*i)%side_size << ", " << (*i)/side_size << "]" << endl;
+		}
+		outfile << "    " << "length: " << counter << endl;
+		
+		free(thisHeap);
+		free(Nodes);
 	}
 
-	
-	free(thisHeap);
+	return 0;
+}
 
-	return path;
-} /* end DijkstraHeap */ 
 #endif
