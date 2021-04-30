@@ -24,13 +24,12 @@ if [ $# -eq 0 ]; then
 fi
 ##
 ## Compile c++ dijkstra's and a*
-g++ -std=c++11 -o find_path find_path.cpp
+if [ ! -f "find_path" ]; then
+  g++ -std=c++11 -o find_path find_path.cpp
+fi
 ##
 ## Run exe to generate path YAMLs
 ./find_path $1
-##
-## Delete generated exe
-rm find_path
 ##
 ## Run visualizer on file
 ./visualizer.exe $1
