@@ -86,7 +86,6 @@ for agent in data['agents']:
     goalDict[agent['name']] = [agent['start'],agent['goal']]
 # Read in the obstacles
 for obstacle in data['map']['obstacles']:
-    obstacles.append(obstacle)
     astar_maze[obstacle[0]][obstacle[1]] = 1 #adding obstacle points to maze
     dijkstra_maze[obstacle[0]][obstacle[1]] = 1  # adding obstacle points to maze
 
@@ -181,7 +180,7 @@ for agent in range(0,num_agents):
         ast.set_data(astar_maze)
         dij.set_data(dijkstra_maze)
         fig.canvas.draw_idle()
-        pyplot.pause(.1)
+        pyplot.pause(.01)
 
     # Both algorithms have finished their path finding, now we display the shortest path they found
     pyplot.pause(3)
