@@ -14,20 +14,48 @@ from matplotlib import colors
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 import yaml
+import argparse
 
+# Take in command line arguments
+parser = argparse.ArgumentParser(prog='VISUALIZE',
+	formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('in_file', help='YAML file for grid')
+args = parser.parse_args()
 
+# Find files based on input
+graph_file = args[in_file]
+tokens = graph_file.split('.')
+if tokens[1] != "yaml":
+	print('ERROR: Input file "{}" is not in yaml format.'.format(graph_file))
+	exit()
+dijkstra_file = tokens[0] + "_dijkstra.yaml"
+astar_file = tokens[0] + "_astar.yaml"
+
+# Verify files
+if not os.path.isfile(graph_file):
+	# Check if file 1 exists
+	print('ERROR: File "{}" not found, exiting.'.format(graph_file))
+	exit()
+if not os.path.isfile(dijkstra_file):
+	# Check if file 1 exists
+	print('ERROR: File "{}" not found, exiting.'.format(dijkstra_file))
+	exit()
+if not os.path.isfile(astar_file):
+	# Check if file 1 exists
+	print('ERROR: File "{}" not found, exiting.'.format(astar_file))
+	exit()
 
 # Reading in agent and obstacle data for graph initialization
-with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_8by8_obst12_agents10_ex90.yaml') as initMap:
+with open(graph_file) as initMap:
     data = yaml.safe_load(initMap)
-with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_8by8_obst12_agents10_ex90_astar.yaml') as pathMap:
+with open(dijkstra_file) as pathMap:
     astar_pathData = yaml.safe_load(pathMap)
-with open(r'D:\OneDrive\Documents\School\EC504\GPUPathfinding\Visualizer_Examples\map_8by8_obst12_agents10_ex90_dijkstra.yaml') as pathMap:
+with open(astar_file) as pathMap:
     dijkstra_pathData = yaml.safe_load(pathMap)
 
 num_agents = len(data['agents'])
-# Establish arrays to read reformatted data into
 
+# Establish arrays to read reformatted data into
 obstacles = []
 tempPath = []
 astar_nodes = dict()
@@ -37,13 +65,12 @@ dijkstra_paths = dict()
 
 pathDict = dict()
 goalDict = dict()
-# Read in maze size and number of agents
 
+# Read in maze size and number of agents
 size = max(data['map']['dimensions'])
 # creating blank map of zeros
 astar_maze = np.full((size,size), 0)
 dijkstra_maze = np.full((size,size), 0)
-
 
 colorTracker = (num_agents)/4
 # Read in the start and end goal of agents
@@ -66,7 +93,6 @@ for agent in dijkstra_pathData['paths']:
     name = agent['name']
     dijkstra_nodes[name] = agent['nodes']
     dijkstra_paths[name] = agent['path']
-
 
 astar_template = np.copy(astar_maze)
 dijkstra_template = np.copy(dijkstra_maze)
