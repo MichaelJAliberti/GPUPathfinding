@@ -10,11 +10,11 @@
 ## HOW TO RUN
 ## 	./visualize.sh [path to SampleMap]
 ##
-## NOTICE: 
+## NOTICE:
 ## 	If the visualizer is exited before completion,
 ## 	there is chance that the code will continue running.
-## 	In this case, use ctrl+c and then run 
-## 	cleanup.py [path to SampleMap] 
+## 	In this case, use ctrl+c and then run
+## 	cleanup.py [path to SampleMap]
 ## 	to remove generated files
 ##
 ## Accept input file for graph structure
@@ -25,7 +25,7 @@ fi
 ##
 ## Compile c++ dijkstra's and a*
 g++ -std=c++11 -o find_path find_path.cpp
-## 
+##
 ## Run exe to generate path YAMLs
 ./find_path $1
 ##
@@ -33,7 +33,7 @@ g++ -std=c++11 -o find_path find_path.cpp
 rm find_path
 ##
 ## Run visualizer on file
-py visualizer.py $1
+./visualizer.exe $1
 ##
 ## Clean up generated files
-py cleanup.py $1
+python3 cleanup.py $1
