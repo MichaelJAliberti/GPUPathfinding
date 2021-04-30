@@ -12,13 +12,14 @@
 import yaml
 import argparse
 import os
+import sys
 from matplotlib import pyplot
 from matplotlib import colors
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 
 def on_close(event):
-    exit()
+    sys.exit()
 
 # Take in command line arguments
 parser = argparse.ArgumentParser(prog='VISUALIZE',
@@ -31,10 +32,10 @@ graph_file = args.in_file
 tokens = graph_file.split('.')
 if len(tokens) < 2:
     print('ERROR: Input file "{}" is not in yaml format.'.format(graph_file))
-    exit()
+    sys.exit()
 elif tokens[1] != "yaml":
 	print('ERROR: Input file "{}" is not in yaml format.'.format(graph_file))
-	exit()
+	sys.exit()
 dijkstra_file = tokens[0] + "_dijkstra.yaml"
 astar_file = tokens[0] + "_astar.yaml"
 
@@ -42,15 +43,15 @@ astar_file = tokens[0] + "_astar.yaml"
 if not os.path.isfile(graph_file):
 	# Check if file 1 exists
 	print('ERROR: File "{}" not found, exiting.'.format(graph_file))
-	exit()
+	sys.exit()
 if not os.path.isfile(dijkstra_file):
 	# Check if file 1 exists
 	print('ERROR: File "{}" not found, exiting.'.format(dijkstra_file))
-	exit()
+	sys.exit()
 if not os.path.isfile(astar_file):
 	# Check if file 1 exists
 	print('ERROR: File "{}" not found, exiting.'.format(astar_file))
-	exit()
+	sys.exit()
 
 # Reading in agent and obstacle data for graph initialization
 with open(graph_file) as initMap:
