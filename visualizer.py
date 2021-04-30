@@ -9,12 +9,16 @@
 #  4 : Source/Destination (Blue)
 ###############################################
 
+import yaml
+import argparse
+import os
 from matplotlib import pyplot
 from matplotlib import colors
 from matplotlib.ticker import MultipleLocator
 import numpy as np
-import yaml
-import argparse
+
+def on_close(event):
+    exit()
 
 # Take in command line arguments
 parser = argparse.ArgumentParser(prog='VISUALIZE',
@@ -23,9 +27,12 @@ parser.add_argument('in_file', help='YAML file for grid')
 args = parser.parse_args()
 
 # Find files based on input
-graph_file = args[in_file]
+graph_file = args.in_file
 tokens = graph_file.split('.')
-if tokens[1] != "yaml":
+if len(tokens) < 2:
+    print('ERROR: Input file "{}" is not in yaml format.'.format(graph_file))
+    exit()
+elif tokens[1] != "yaml":
 	print('ERROR: Input file "{}" is not in yaml format.'.format(graph_file))
 	exit()
 dijkstra_file = tokens[0] + "_dijkstra.yaml"
@@ -48,9 +55,9 @@ if not os.path.isfile(astar_file):
 # Reading in agent and obstacle data for graph initialization
 with open(graph_file) as initMap:
     data = yaml.safe_load(initMap)
-with open(dijkstra_file) as pathMap:
-    astar_pathData = yaml.safe_load(pathMap)
 with open(astar_file) as pathMap:
+    astar_pathData = yaml.safe_load(pathMap)
+with open(dijkstra_file) as pathMap:
     dijkstra_pathData = yaml.safe_load(pathMap)
 
 num_agents = len(data['agents'])
@@ -103,6 +110,7 @@ boundaries = [0,1,2,3,4,5]
 norm = colors.BoundaryNorm(boundaries, cmap.N, clip=True)
 
 fig = pyplot.figure(figsize =(20,10))
+cid = fig.canvas.mpl_connect('close_event', on_close)
 ax1 = fig.add_subplot(121)
 ax2 = fig.add_subplot(122)
 ast = ax1.imshow(astar_maze, aspect='auto', cmap=cmap, norm= norm, extent = [0,size,size,0])
@@ -149,7 +157,6 @@ for agent in range(0,num_agents):
             astar_maze[nextSpot[0],nextSpot[1]] = 2
             astar_nodeTracker += 1
 
-
         if not dijkstra_flag:
             nextSpot = dijkstra_nodes[agentName][dijkstra_nodeTracker]
             dijkstra_maze[nextSpot[0], nextSpot[1]] = 2
@@ -160,11 +167,13 @@ for agent in range(0,num_agents):
             for spot in astar_paths[agentName]:
                 astar_maze[spot[0], spot[1]] = 3
             astar_pathlength = len(astar_paths[agentName])
+
         if dijkstra_nodeTracker >= len(dijkstra_nodes[agentName]):
             dijkstra_flag = True
             for spot in dijkstra_paths[agentName]:
                 dijkstra_maze[spot[0], spot[1]] = 3
             dijkstra_pathlength = len(dijkstra_paths[agentName])
+
         ax1.set_title('A*    |    Nodes Visited: ' + str(astar_nodeTracker) + '    |    Path Length: ' + str(astar_pathlength))
         ax2.set_title('Dijkstra    |    Nodes Visited: ' + str(dijkstra_nodeTracker) + '    |    Path Length: ' + str(dijkstra_pathlength))
         #updating graphs
@@ -174,7 +183,7 @@ for agent in range(0,num_agents):
         pyplot.pause(.1)
 
     # Both algorithms have finished their path finding, now we display the shortest path they found
-    pyplot.pause(1)
+    pyplot.pause(3)
 
     # Now we reset the mazes for the next agent
     astar_maze = np.copy(astar_template)
