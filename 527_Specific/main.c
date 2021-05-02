@@ -9,6 +9,13 @@
 void diffuse(grid* g);
 int checkDiffusion(grid* g);
 void traversePath(grid* g);
+
+struct point{
+    int x;
+    int y;
+    struct point* next;
+};
+
 /*****************************************************************************/
 int main(int argc, char *argv[])
 {
@@ -84,6 +91,7 @@ void traversePath(grid* g){
     int num_agents = g->num_agents;
     data_t *data = g->diff_matrix;
     struct agent* a = g->agents;
+    struct point* pt_it;
     int i;
     int x, y, arrsize = rowlen*rowlen;
     data_t currentSpot, target;
@@ -92,17 +100,23 @@ void traversePath(grid* g){
     int pathLength;
     target = g->dy*mod_size + g->dx;
 
-    for (i = 0; i < num_agents; i++){
-        //FILE *fp;
-        //fp = fopen("diff_output.txt","w+");
-        printf("agent%d:\n", i);
+    struct point** paths = (struct point**) calloc(num_agents, sizeof(struct point*));
 
+    for (i = 0; i < num_agents; i++){
         x = a->sx;
         y = a->sy;
         pathLength = 0;
+        paths[i] = (struct point*) calloc(1, sizeof(struct point));
+        paths[i]->x = x;
+        paths[i]->y = y;
+        paths[i]->next = NULL;
+        pt_it = paths[i];
         currentSpot = y*mod_size + x;
+
         while(currentSpot != target){
             
+            pt_it->next = (struct point*) calloc(1, sizeof(struct point));
+
             neighborMax = 0;
             if(data[(y-1)*mod_size + x] > neighborMax){
                 neighborMax = data[(y-1)*mod_size+x]; 
@@ -126,15 +140,30 @@ void traversePath(grid* g){
             else if(neighborIter == 3) x++;
             else if(neighborIter == 4) x--;
 
+            // setup for next iteration
             currentSpot = y*mod_size+x;
+            pt_it = pt_it->next;
+            pt_it->x = x;
+            pt_it->y = y;
+            pt_it->next = NULL;
+
             //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
-            printf("- [%d,%d]\n", x, y);
             //fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
             pathLength++;
-
         }
 
         a = a->next;
+    }
+
+    //FILE *fp;
+    for (i = 0; i < num_agents; i++){
+        //fp = fopen("diff_output.txt","w+");
+        printf("agent%d:\n", i);
+        pt_it = paths[i];
+        while (pt_it != 0){
+            printf("- [%d,%d]\n", pt_it->x, pt_it->y);
+            pt_it = pt_it->next;
+        }
     }
     //fprintf(fp, "Path Length: %d", pathLength);
     //fclose(fp);
