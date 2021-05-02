@@ -10,7 +10,6 @@
 void diffuse(grid* g);
 int checkDiffusion(grid* g);
 void traversePath(grid* g);
-int getNeighborAvg(grid* g, int ax, int ay);
 /*****************************************************************************/
 int main(int argc, char *argv[])
 {
@@ -87,44 +86,28 @@ void traversePath(grid* g){
 
     FILE *fp;
     fp = fopen("diff_output.txt","w+");
-    target = data[a->dy*rowlen+a->dx];
-    currentSpot = data[y*rowlen+x];
-    printf("Source Value: [%d,%d] : %f\n", x, y, currentSpot);
-    printf("Target Value: [%d,%d] : %f\n", a->dx, a->dy, target);
+    target = data[a->dy*mod_size+a->dx];
+    currentSpot = data[y*mod_size+x];
+    printf("Source Value: [%d,%d] : %f\n", y, x, currentSpot);
+    printf("Target Value: [%d,%d] : %f\n", a->dy, a->dx, target);
     while(currentSpot != target){
         neighborMax = 0;
-        if(data[(x-1)*mod_size+y] > neighborMax){neighborMax = data[(x-1)*mod_size+y]; neighborIter = 1;} //x--
-        if(data[(x+1)*mod_size+y] > neighborMax){neighborMax = data[(x+1)*mod_size+y]; neighborIter = 2;} //x++
-        if(data[x*mod_size+y+1] > neighborMax){neighborMax = data[x*mod_size+y+1]; neighborIter = 3;}
-        if(data[x*mod_size+y-1] > neighborMax){neighborMax = data[x*mod_size+y-1]; neighborIter = 4;}
-        printf("%d", neighborIter);
-        if(neighborIter == 1){x--;}
-        else if(neighborIter == 2){x++;}
-        else if(neighborIter == 3){y++;}
-        else if(neighborIter == 4){y--;}
-        currentSpot = data[x*mod_size+y];
+        if(data[(y-1)*mod_size+x] > neighborMax){neighborMax = data[(y-1)*mod_size+x]; neighborIter = 1;} //y--
+        if(data[(y+1)*mod_size+x] > neighborMax){neighborMax = data[(y+1)*mod_size+x]; neighborIter = 2;} //y++
+        if(data[y*mod_size+x+1] > neighborMax){neighborMax = data[y*mod_size+x+1]; neighborIter = 3;}
+        if(data[y*mod_size+x-1] > neighborMax){neighborMax = data[y*mod_size+x-1]; neighborIter = 4;}
+        if(neighborIter == 1){y--;}
+        else if(neighborIter == 2){y++;}
+        else if(neighborIter == 3){x++;}
+        else if(neighborIter == 4){x--;}
+        currentSpot = data[y*mod_size+x];
         //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
-        printf("- [%d,%d] | D = %f\n", x, y, currentSpot);
-        fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
+        printf("- [%d,%d] | D = %f\n", y, x, currentSpot);
+        fprintf(fp, "- [%d,%d] | D = %f\n", y, x, currentSpot);
         pathLength++;
 
     }
     //fp << "Path Length: " << pathLength << endl;
     fprintf(fp, "Path Length: %d", pathLength);
     fclose(fp);
-}
-
-int getNeighborAvg(grid* g, int ax, int ay){
-
-    data_t runsum = 0;
-    int rowlen = g->size;
-    int numNeighbors = 0;
-    data_t *data = g->diff_matrix;
-    //printf("Analyzing point [%d, %d]:\n", ax, ay);
-    runsum += (data_t)data[ay*rowlen+ax-1]; ///*printf("\tAdding Left neighbor %d to runsum\n", data[ax*rowlen+ay-1]);*/ numNeighbors++;}
-    runsum += (data_t)data[ay*rowlen+ax+1]; ///*printf("\tAdding Right neighbor %d to runsum\n", data[ax*rowlen+ay+1]);*/ numNeighbors++;}
-    runsum += (data_t)data[(ay-1)*rowlen+ax]; ///*printf("\tAdding Top neighbor %d to runsum\n", data[(ax-1)*rowlen+ay]);*/ numNeighbors++;}
-    runsum += (data_t)data[(ay+1)*rowlen+ax]; ///*printf("\tAdding Bottom neighbor %d to runsum\n", data[(ax+1)*rowlen+ay]);*/ numNeighbors++;}
-
-    return runsum/4;
 }
