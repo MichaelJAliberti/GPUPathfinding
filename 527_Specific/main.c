@@ -1,7 +1,6 @@
 /****************************************************************************
 
    gcc -O1 main.c -o main
-
 */
 
 #include "LoadMap.h"
@@ -13,8 +12,15 @@ void traversePath(grid* g);
 /*****************************************************************************/
 int main(int argc, char *argv[])
 {
-    /* declare and initialize the array */
-    grid* myGrid = LoadGrid("map_8by8_obst12_agents1_ex0.yaml"); //this creates the grid to use
+    /* retrieve input file */
+    grid* myGrid;
+    if (argc == 2){
+        myGrid = LoadGrid(argv[1]); //this creates the grid to use
+    }
+    else{
+        printf("Requires input: filepath\n");
+        exit(1);
+    }
 
     /*this runs the entire diffusion process and will run until the graph is fully diffused.*/
     diffuse(myGrid);
@@ -84,16 +90,14 @@ void traversePath(grid* g){
     int neighborIter;
     int pathLength = 0;
 
-    FILE *fp;
-    fp = fopen("diff_output.txt","w+");
+    //FILE *fp;
+    //fp = fopen("diff_output.txt","w+");
     target = data[a->dy*mod_size+a->dx];
     currentSpot = data[y*mod_size+x];
-    printf("Source Value: [%d,%d] : %f\n", y, x, currentSpot);
-    printf("Target Value: [%d,%d] : %f\n", a->dy, a->dx, target);
     while(currentSpot != target){
         neighborMax = 0;
-        if(data[(y-1)*mod_size+x] > neighborMax){neighborMax = data[(y-1)*mod_size+x]; neighborIter = 1;} //y--
-        if(data[(y+1)*mod_size+x] > neighborMax){neighborMax = data[(y+1)*mod_size+x]; neighborIter = 2;} //y++
+        if(data[(y-1)*mod_size + x] > neighborMax){neighborMax = data[(y-1)*mod_size+x]; neighborIter = 1;} //y--
+        if(data[(y+1)*mod_size + x] > neighborMax){neighborMax = data[(y+1)*mod_size+x]; neighborIter = 2;} //y++
         if(data[y*mod_size+x+1] > neighborMax){neighborMax = data[y*mod_size+x+1]; neighborIter = 3;}
         if(data[y*mod_size+x-1] > neighborMax){neighborMax = data[y*mod_size+x-1]; neighborIter = 4;}
         if(neighborIter == 1){y--;}
@@ -102,8 +106,8 @@ void traversePath(grid* g){
         else if(neighborIter == 4){x--;}
         currentSpot = data[y*mod_size+x];
         //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
-        printf("- [%d,%d] | D = %f\n", y, x, currentSpot);
-        fprintf(fp, "- [%d,%d] | D = %f\n", y, x, currentSpot);
+        printf("- [%d,%d] | D = %f\n", x, y, currentSpot);
+        //fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
         pathLength++;
 
     }
