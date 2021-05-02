@@ -203,17 +203,17 @@ int PrintGrid(grid* example){
 	for (i = 0; i < size; i++){
 		mult = i*size;
 		for (j = 0; j < size; j++){
-			printf("%.0f,\t", example->diff_matrix[mult + j]);
+			printf("%.10f,\t", example->diff_matrix[mult + j]);
 		}
 		printf("\n");
 	}
 
 	printf("\n");
-
+/*
 	for (i = 0; i < size; i++){
 		mult = i*size;
 		for (j = 0; j < size; j++){
-			printf("%.0f,\t", example->obs_matrix[mult + j]);
+			printf("%.2f,\t", example->obs_matrix[mult + j]);
 		}
 		printf("\n");
 	}

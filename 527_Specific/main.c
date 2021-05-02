@@ -16,7 +16,7 @@ int getNeighborAvg(grid* g, int ax, int ay);
 int main(int argc, char *argv[])
 {
     /* declare and initialize the array */
-    grid* myGrid = LoadGrid("map_8by8_obst12_agents1_ex0.yaml"); //this creates the grid to use
+    grid* myGrid = LoadGrid("map_8by8_obst24_agents1_ex0.yaml"); //this creates the grid to use
 
     /*this runs the entire diffusion process and will run until the graph is fully diffused.*/
     diffuse(myGrid);
@@ -31,27 +31,28 @@ int main(int argc, char *argv[])
 void diffuse(grid* g)
 {
 
-  long int i, j;
+  long int i, j, k;
   int rowlen = g->size;
+  int row_bound = rowlen + 1;
+  int mod_size = rowlen + 2;
   data_t *data = g->diff_matrix;
   data_t *obstacles = g->obs_matrix;
   data_t newD;
   int destX = g->dx, destY = g->dy;
-  int sum;
 
-  int large = rowlen*rowlen*rowlen*rowlen*rowlen;
+  data_t large = (data_t) rowlen*rowlen*10000000000;
 
-  while (!checkDiffusion(g)) {
+  k = 0;
+
+  while (!checkDiffusion(g)){ /**/
+    k++;
     PrintGrid(g);
     printf("\n");
-    for (i = 0; i < rowlen; i++) {
-      for (j = 0; j < rowlen; j++) {
-        data[destY*rowlen+destX] = large;
-        //newD = .25 * (data[(i-1)*rowlen+j] + data[(i+1)*rowlen+j] + data[i*rowlen+j+1] + data[i*rowlen+j-1]) * obstacles[destX*rowlen+destY];
-        sum = getNeighborAvg(g, i, j);
-        newD = sum * obstacles[j*rowlen+i];
-        //printf("Old value: %d, New Value: %d\n\n", data[j*rowlen+i], newD);
-        data[j*rowlen+i] = newD;
+    for (i = 1; i < row_bound; i++) {
+      for (j = 1; j < row_bound; j++) {
+        data[destY * mod_size + destX] = large;
+        newD = (data_t) .25 * (data[(i-1)*mod_size + j] + data[(i+1)*mod_size + j] + data[i*mod_size + j+1] + data[i*mod_size + j-1]) * obstacles[i*mod_size + j];
+        data[i*mod_size + j] = newD;
       }
     }
   }
@@ -61,13 +62,17 @@ int checkDiffusion(grid* g){
     int i,j;
     int debug1=1,debug2=2,debug3=3;
     int rowlen = g->size;
+    int row_bound = rowlen + 1;
+    int mod_size = rowlen + 2;
     data_t *data = g->diff_matrix;
     data_t *obstacles = g->obs_matrix;
-    for(i = 0; i < rowlen; i++){
-        for(j = 0; j < rowlen; j++){
-            if(obstacles[i*rowlen+j] && (data[i*rowlen+j] <= 0)){return 0;}
+
+    for(i = 1; i < row_bound; i++){
+        for(j = 1; j < row_bound; j++){
+            if(obstacles[i*mod_size+j] && (data[i*mod_size+j] == 0)){return 0;}
         }
     }
+
     return 1;
 }
 
@@ -100,19 +105,4 @@ void traversePath(grid* g){
     //fp << "Path Length: " << pathLength << endl;
     fprintf(fp, "Path Length: %d", pathLength);
     fclose(fp);
-}
-
-int getNeighborAvg(grid* g, int ax, int ay){
-
-    int runsum = 0;
-    int rowlen = g->size;
-    int numNeighbors = 0;
-    data_t *data = g->diff_matrix;
-    //printf("Analyzing point [%d, %d]:\n", ax, ay);
-    if(ax > 0){runsum += data[ay*rowlen+ax-1]; /*printf("\tAdding Left neighbor %d to runsum\n", data[ax*rowlen+ay-1]);*/ numNeighbors++;}
-    if(ax < rowlen-1){runsum += data[ay*rowlen+ax+1]; /*printf("\tAdding Right neighbor %d to runsum\n", data[ax*rowlen+ay+1]);*/ numNeighbors++;}
-    if(ay > 0){runsum += data[(ay-1)*rowlen+ax]; /*printf("\tAdding Top neighbor %d to runsum\n", data[(ax-1)*rowlen+ay]);*/ numNeighbors++;}
-    if(ay < rowlen-1){runsum += data[(ay+1)*rowlen+ax]; /*printf("\tAdding Bottom neighbor %d to runsum\n", data[(ax+1)*rowlen+ay]);*/ numNeighbors++;}
-
-    return runsum/numNeighbors;
 }
