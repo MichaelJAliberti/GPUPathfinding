@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
 
     /*this runs the entire diffusion process and will run until the graph is fully diffused.*/
     diffuse(myGrid);
-    PrintGrid(myGrid);
     traversePath(myGrid);
 
 } /* end main */
@@ -47,8 +46,7 @@ void diffuse(grid* g)
   data_t large = (data_t) rowlen*rowlen*10000000000;
 
   while (!checkDiffusion(g)){ /**/
-    PrintGrid(g);
-    printf("\n");
+    //PrintGrid(g);
     for (i = 1; i < row_bound; i++) {
       for (j = 1; j < row_bound; j++) {
         data[destY * mod_size + destX] = large;
@@ -79,39 +77,65 @@ int checkDiffusion(grid* g){
 
 
 void traversePath(grid* g){
+    
     int rowlen = g->size;
     int row_bound = rowlen + 1;
     int mod_size = rowlen + 2;
+    int num_agents = g->num_agents;
     data_t *data = g->diff_matrix;
     struct agent* a = g->agents;
-    int i, x = a->sx, y = a->sy, arrsize = rowlen*rowlen;
-    float currentSpot, target;
-    float neighborMax;
+    int i;
+    int x, y, arrsize = rowlen*rowlen;
+    data_t currentSpot, target;
+    data_t neighborMax;
     int neighborIter;
-    int pathLength = 0;
+    int pathLength;
+    target = g->dy*mod_size + g->dx;
 
-    //FILE *fp;
-    //fp = fopen("diff_output.txt","w+");
-    target = data[a->dy*mod_size+a->dx];
-    currentSpot = data[y*mod_size+x];
-    while(currentSpot != target){
-        neighborMax = 0;
-        if(data[(y-1)*mod_size + x] > neighborMax){neighborMax = data[(y-1)*mod_size+x]; neighborIter = 1;} //y--
-        if(data[(y+1)*mod_size + x] > neighborMax){neighborMax = data[(y+1)*mod_size+x]; neighborIter = 2;} //y++
-        if(data[y*mod_size+x+1] > neighborMax){neighborMax = data[y*mod_size+x+1]; neighborIter = 3;}
-        if(data[y*mod_size+x-1] > neighborMax){neighborMax = data[y*mod_size+x-1]; neighborIter = 4;}
-        if(neighborIter == 1){y--;}
-        else if(neighborIter == 2){y++;}
-        else if(neighborIter == 3){x++;}
-        else if(neighborIter == 4){x--;}
-        currentSpot = data[y*mod_size+x];
-        //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
-        printf("- [%d,%d] | D = %f\n", x, y, currentSpot);
-        //fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
-        pathLength++;
+    for (i = 0; i < num_agents; i++){
+        //FILE *fp;
+        //fp = fopen("diff_output.txt","w+");
+        printf("agent%d:\n", i);
 
+        x = a->sx;
+        y = a->sy;
+        pathLength = 0;
+        currentSpot = y*mod_size + x;
+        while(currentSpot != target){
+            
+            neighborMax = 0;
+            if(data[(y-1)*mod_size + x] > neighborMax){
+                neighborMax = data[(y-1)*mod_size+x]; 
+                neighborIter = 1;
+            }
+            if(data[(y+1)*mod_size + x] > neighborMax){
+                neighborMax = data[(y+1)*mod_size+x]; 
+                neighborIter = 2;
+            }
+            if(data[y*mod_size+x+1] > neighborMax){
+                neighborMax = data[y*mod_size+x+1]; 
+                neighborIter = 3;
+            }
+            if(data[y*mod_size+x-1] > neighborMax){
+                neighborMax = data[y*mod_size+x-1]; 
+                neighborIter = 4;
+            }
+            
+            if(neighborIter == 1) y--;
+            else if(neighborIter == 2) y++;
+            else if(neighborIter == 3) x++;
+            else if(neighborIter == 4) x--;
+
+            currentSpot = y*mod_size+x;
+            //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
+            printf("- [%d,%d]\n", x, y);
+            //fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
+            pathLength++;
+
+        }
+
+        a = a->next;
     }
-    //fp << "Path Length: " << pathLength << endl;
-    fprintf(fp, "Path Length: %d", pathLength);
-    fclose(fp);
+    //fprintf(fp, "Path Length: %d", pathLength);
+    //fclose(fp);
 }
