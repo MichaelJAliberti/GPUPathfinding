@@ -12,7 +12,7 @@ typedef double data_t;
 **************************************************************/
 
 struct agent{
-	data_t sx;
+	int sx;
 	int sy;
 	int dx;
 	int dy;
@@ -38,7 +38,7 @@ grid* LoadGrid(char* filename){
 	// Reads from YAML file to initialize grid
 
 	// Variable declarations
-	int i, j, mult, size;
+	int i, j, mult, size, mod_size, mod_size2;
 	int x, y, sx, sy, dx, dy;
 	FILE *fp;
 	char* line = NULL;
@@ -73,10 +73,10 @@ grid* LoadGrid(char* filename){
 		// read in goal
 		token = strtok(line, "["); // remove padding
 		token = strtok(NULL, ", "); // first digit
-		dx = atoi(token);
+		dx = atoi(token) + 1;
 		token = strtok(NULL, "]"); // second digit
 		token = strcpy(token, token+1);
-		dy = atoi(token);
+		dy = atoi(token) + 1;
 
 		// read in name
 		if (!getline(&line, &line_size, fp)){
@@ -94,10 +94,10 @@ grid* LoadGrid(char* filename){
 		}
 		token = strtok(line, "["); // remove padding
 		token = strtok(NULL, ", "); // first digit
-		sx = atoi(token);
+		sx = atoi(token) + 1;
 		token = strtok(NULL, "]"); // second digit
 		token = strcpy(token, token+1);
-		sy = atoi(token);
+		sy = atoi(token) + 1;
 
 		if (!example->num_agents){
 			example->agents = (struct agent*) calloc(1, sizeof(struct agent));
@@ -134,28 +134,44 @@ grid* LoadGrid(char* filename){
 	token = strtok(line, "["); // remove padding
 	token = strtok(NULL, ", "); // first digit
 	size = atoi(token);
+	mod_size = size + 1;
+	mod_size2 = size + 2;
 	example->size = size;
 	token = strtok(NULL, "]"); // second digit
 	token = strcpy(token, token+1);
 
 	// initialize obstacle matrix w/ 1s
-	example->obs_matrix = (data_t*) calloc(size * size, sizeof(data_t));
-	for (i = 0; i < size; i++){
-		mult = i*size;
-		for (j = 0; j < size; j++){
+	example->obs_matrix = (data_t*) calloc((mod_size2) * (mod_size2), sizeof(data_t));
+	for (i = 0; i < mod_size2; i++){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
 			example->obs_matrix[mult + j] = 1;
 		}
 	}
 
+	// change added edges of obs_matrix to 0
+	for (i = 0; i < mod_size2; i += (mod_size2-1)){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
+			example->obs_matrix[mult + j] = 0;
+		}
+	}
+	for (i = 0; i < mod_size2; i += (mod_size2-1)){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
+			example->obs_matrix[j*mod_size2 + i] = 0;
+		}
+	}
+
 	// initialize diffusion matrix w/ 1s
-	example->diff_matrix = (data_t*) calloc(size * size, sizeof(data_t));
-	for (i = 0; i < size; i++){
-		mult = i*size;
-		for (j = 0; j < size; j++){
+	example->diff_matrix = (data_t*) calloc((mod_size2) * (mod_size2), sizeof(data_t));
+	for (i = 0; i < mod_size2; i++){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
 			example->diff_matrix[mult + j] = 0;
 		}
 	}
-	example->diff_matrix[example->dx + example->dy * size] = size * size * size * size * size;
+	example->diff_matrix[example->dx + example->dy * mod_size2] = (data_t) size * size;
 
 	if (!getline(&line, &line_size, fp)){
 		printf("Invalid file\n");
@@ -166,12 +182,12 @@ grid* LoadGrid(char* filename){
 	while (getline(&line, &line_size, fp) > 1){
 		token = strtok(line, "["); // remove padding
 		token = strtok(NULL, ", "); // first digit
-		x = atoi(token);
+		x = atoi(token) + 1;
 		token = strtok(NULL, "]"); // second digit
 		token = strcpy(token, token+1);
-		y = atoi(token);
+		y = atoi(token) + 1;
 
-		example->obs_matrix[x + y*size] = 0; // obstacle to 0
+		example->obs_matrix[x + y*mod_size2] = 0; // obstacle to 0
 	}
 
 	fclose(fp);
@@ -182,12 +198,22 @@ grid* LoadGrid(char* filename){
 int PrintGrid(grid* example){
 	int i, j, mult;
 	//struct agent* next_agent = example->agents;
-	int size = example->size;
+	int size = example->size + 2;
 
 	for (i = 0; i < size; i++){
 		mult = i*size;
 		for (j = 0; j < size; j++){
 			printf("%.0f,\t", example->diff_matrix[mult + j]);
+		}
+		printf("\n");
+	}
+
+	printf("\n");
+
+	for (i = 0; i < size; i++){
+		mult = i*size;
+		for (j = 0; j < size; j++){
+			printf("%.0f,\t", example->obs_matrix[mult + j]);
 		}
 		printf("\n");
 	}
