@@ -5,16 +5,19 @@
 
 #include "LoadMap.h"
 
-/* Prototypes */
-void diffuse(grid* g);
-int checkDiffusion(grid* g);
-void traversePath(grid* g);
-
+/* structures */
 struct point{
     int x;
     int y;
+    int length;
     struct point* next;
 };
+
+/* Prototypes */
+void diffuse(grid* g);
+int checkDiffusion(grid* g);
+struct point** traversePath(grid* g);
+int printPath(int num_agents, struct point** paths, char* filein);
 
 /*****************************************************************************/
 int main(int argc, char *argv[])
@@ -31,8 +34,9 @@ int main(int argc, char *argv[])
 
     /*this runs the entire diffusion process and will run until the graph is fully diffused.*/
     diffuse(myGrid);
-    traversePath(myGrid);
+    struct point** paths = traversePath(myGrid);
 
+    printPath(myGrid->num_agents, paths, argv[1]);
 } /* end main */
 
 /************************************/
@@ -40,7 +44,6 @@ int main(int argc, char *argv[])
 /* Diffuse Function */
 void diffuse(grid* g)
 {
-
   long int i, j;
   int rowlen = g->size;
   int row_bound = rowlen + 1;
@@ -51,8 +54,11 @@ void diffuse(grid* g)
   int destX = g->dx, destY = g->dy;
 
   data_t large = (data_t) rowlen*rowlen*10000000000;
+  int it = 0;
+  int fullsize = rowlen * rowlen;
 
-  while (!checkDiffusion(g)){ /**/
+  while (!checkDiffusion(g) && it < fullsize){ /**/
+    it++;
     //PrintGrid(g);
     for (i = 1; i < row_bound; i++) {
       for (j = 1; j < row_bound; j++) {
@@ -83,7 +89,7 @@ int checkDiffusion(grid* g){
 }
 
 
-void traversePath(grid* g){
+struct point** traversePath(grid* g){
     
     int rowlen = g->size;
     int row_bound = rowlen + 1;
@@ -152,19 +158,40 @@ void traversePath(grid* g){
             pathLength++;
         }
 
+        paths[i]->length = pathLength;
         a = a->next;
     }
 
+    return paths;
     //FILE *fp;
-    for (i = 0; i < num_agents; i++){
-        //fp = fopen("diff_output.txt","w+");
-        printf("agent%d:\n", i);
-        pt_it = paths[i];
-        while (pt_it != 0){
-            printf("- [%d,%d]\n", pt_it->x, pt_it->y);
-            pt_it = pt_it->next;
-        }
-    }
     //fprintf(fp, "Path Length: %d", pathLength);
     //fclose(fp);
+}
+
+int printPath(int num_agents, struct point** paths, char* filein)
+{
+    int i;
+    struct point* pt_it;
+    FILE *fp;
+    char* new_name;
+
+    // get new file name
+    new_name = strtok(filein, ".");
+    new_name = strcat(new_name, "_serial_path.yaml");
+
+    fp = fopen(new_name,"w+");
+    fprintf(fp, "paths:\n");
+
+    for (i = 0; i < num_agents; i++){
+        fprintf(fp, "-   name: agent%d\n", i);
+        pt_it = paths[i];
+        fprintf(fp, "    path:\n");
+        while (pt_it != NULL){
+            fprintf(fp, "    - [%d,%d]\n", pt_it->x -1, pt_it->y -1);
+            pt_it = pt_it->next;
+        }
+        fprintf(fp, "    length: %d\n", paths[i]->length);
+    }
+
+    fclose(fp);
 }
