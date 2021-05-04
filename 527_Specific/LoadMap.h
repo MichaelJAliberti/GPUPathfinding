@@ -195,6 +195,87 @@ grid* LoadGrid(char* filename){
 	return example;
 }
 
+grid* MakeGrid(int size){
+	// Reads from YAML file to initialize grid
+
+	// Variable declarations
+	int i, j, mult, mod_size, mod_size2;
+	int x, y, sx, sy, dx, dy;
+	struct agent* next_agent;
+
+	// Allocate grid
+	grid* example = (grid*) calloc(1, sizeof(grid));
+
+	// Get dimensions
+	mod_size = size + 1;
+	mod_size2 = size + 2;
+	example->size = size;
+
+	// Handle agents
+	example->num_agents = 0;
+	for (i = 1; i < mod_size; i++){
+		if (!example->num_agents){
+			example->agents = (struct agent*) calloc(1, sizeof(struct agent));
+			example->dx = 1;
+			example->dy = 1;
+			example->agents->dx = 1;
+			example->agents->dy = 1;
+			example->agents->sx = size-1;
+			example->agents->sy = size-1;
+			example->agents->name = "null";
+			example->agents->next = NULL;
+			next_agent = example->agents;
+		}
+		else{
+			next_agent->next = (struct agent*) calloc(1, sizeof(struct agent));
+			next_agent = next_agent->next;
+			next_agent->dx = 1;
+			next_agent->dy = 1;
+			next_agent->sx = size-1;
+			next_agent->sy = size-1;
+			next_agent->name = "null";
+			next_agent->next = NULL;
+		}
+		example->num_agents++;
+	}
+
+
+	// initialize obstacle matrix w/ 1s
+	example->obs_matrix = (data_t*) calloc((mod_size2) * (mod_size2), sizeof(data_t));
+	for (i = 0; i < mod_size2; i++){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
+			example->obs_matrix[mult + j] = 1;
+		}
+	}
+
+	// change added edges of obs_matrix to 0
+	for (i = 0; i < mod_size2; i += (mod_size2-1)){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
+			example->obs_matrix[mult + j] = 0;
+		}
+	}
+	for (i = 0; i < mod_size2; i += (mod_size2-1)){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
+			example->obs_matrix[j*mod_size2 + i] = 0;
+		}
+	}
+
+	// initialize diffusion matrix w/ 1s
+	example->diff_matrix = (data_t*) calloc((mod_size2) * (mod_size2), sizeof(data_t));
+	for (i = 0; i < mod_size2; i++){
+		mult = i*mod_size2;
+		for (j = 0; j < mod_size2; j++){
+			example->diff_matrix[mult + j] = 0;
+		}
+	}
+	example->diff_matrix[example->dx + example->dy * mod_size2] = (data_t) size * size;
+
+	return example;
+}
+
 int PrintGrid(grid* example){
 	int i, j, mult;
 	//struct agent* next_agent = example->agents;
