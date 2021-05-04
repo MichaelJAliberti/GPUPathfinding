@@ -26,11 +26,6 @@ inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true){
     if (abort) exit(code);
   }
 }
-#define NUM_THREADS_PER_BLOCK   256
-#define NUM_BLOCKS         1
-#define PRINT_TIME         1
-#define SM_ARR_LEN        2048
-#define TOL            1e6
 
 #define IMUL(a, b) __mul24(a, b)
 
@@ -43,14 +38,15 @@ struct point{
 };
 
 __global__ void gpu_diffuse (int size, data_t* diffuseMap, data_t* obstacleMap, int dx, int dy);
-void cpu_diffuse (int size, data_t* diffuseMap, data_t* obstacleMap, int dx, int dy);
 __global__ void gpu_checkDiffusion (int size, data_t* diffuseMap, data_t* obstacleMap, int* checkMap);
-int cpu_checkDiffusion(int size, data_t* diffuseMap, data_t* obstacleMap);
 int gpu_checkDiffusionHost(int size, int* map);
-struct point** traversePath(grid* g);
+void cpu_diffuse (int size, data_t* diffuseMap, data_t* obstacleMap, int dx, int dy);
+int cpu_checkDiffusion(int size, data_t* diffuseMap, data_t* obstacleMap);
 int printPath(int num_agents, struct point** paths, char* filein);
 int PrintIntArray(int size, int* arr);
 int PrintArray(int size, data_t* arr);
+double interval(struct timespec start, struct timespec end);
+struct point** traversePath(grid* g);
 
 
 
@@ -70,11 +66,23 @@ int main(int argc, char *argv[]){
       printf("Requires input: filepath\n");
       exit(1);
     }
-    // Essential data from grid
+    // Essential variables
     int size = cpuGrid->size;
     int mod_size = size + 2;
     int dx = cpuGrid->dx;
     int dy = cpuGrid->dy;
+    int it = 0;
+    int fullsize = size * size;
+
+    // Timing variables
+    struct timespec time_start, time_stop;
+    cudaEvent_t start, stop;
+    cudaEvent_t kernal_start, kernal_stop;
+    float elapsed_cpu, elapsed_gpu, elapsed_kernal;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventCreate(&kernal_start);
+    cudaEventCreate(&kernal_stop);
 
 
     // Select GPU
@@ -108,6 +116,10 @@ int main(int argc, char *argv[]){
     CUDA_SAFE_CALL(cudaMalloc((void **)&d_oMap, allocSize));
     CUDA_SAFE_CALL(cudaMalloc((void **)&d_dCheck, intAllocSize));
 
+    // Recording timing including data transfers to and from device
+    printf("Running GPU diffusion...\n");
+    cudaEventRecord(start, 0);
+
     // Transfer the arrays to the GPU memory
     CUDA_SAFE_CALL(cudaMemcpy(d_dMap, h_dMap, allocSize, cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_oMap, h_oMap, allocSize, cudaMemcpyHostToDevice));
@@ -115,10 +127,8 @@ int main(int argc, char *argv[]){
     // Defining single block dimensions
     dim3 dimBlock(8,8);
     dim3 dimGrid(size/dimBlock.x, size/dimBlock.y);
-    printf("Running GPU diffusion...\n");
     // Run diffusion on GPU
-    int it = 0;
-    int fullsize = size * size;
+    cudaEventRecord(kernal_start, 0);
     while(!flag && it < fullsize){
         it++;
         for(int i = 0; i < size; i++){
@@ -131,27 +141,39 @@ int main(int argc, char *argv[]){
         //printf("Transferring diffusion check to host...\n");
         CUDA_SAFE_CALL(cudaMemcpy(h_dCheck, d_dCheck, intAllocSize, cudaMemcpyDeviceToHost));
         //printf("Checking diffusion...\n");
-        cudaDeviceSynchronize();
         flag = gpu_checkDiffusionHost(mod_size, h_dCheck);
         //printf("Flag: %d\n",flag);
     }
-    printf("GPU diffusion finished.\n");
-
-    // Check for errors during launch
-    CUDA_SAFE_CALL(cudaPeekAtLastError());
-
+    cudaEventRecord(kernal_stop, 0);
+    cudaEventSynchronize(stop);
     // Transfer the results back to the host
     CUDA_SAFE_CALL(cudaMemcpy(h_dMap, d_dMap, allocSize, cudaMemcpyDeviceToHost));
-    cudaDeviceSynchronize();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&elapsed_gpu, start, stop);
+    cudaEventElapsedTime(&elapsed_kernal, kernal_start, kernal_stop);
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    cudaEventDestroy(kernal_start);
+    cudaEventDestroy(kernal_stop);
+    printf("GPU diffusion finished.\n");
+
     gpuGrid->diff_matrix = h_dMap;
     PrintArray(mod_size,h_dMap);
 
-
     // Compute the results on the host //EDIT
     printf("Running CPU diffusion...\n");
+    clock_gettime(CLOCK_REALTIME, &time_start);
     cpu_diffuse(mod_size, diffuseMap, obstacleMap, dx, dy);
+    clock_gettime(CLOCK_REALTIME, &time_stop);
     printf("CPU diffusion finished.\n");
-    PrintArray(mod_size, diffuseMap);
+    elapsed_cpu = interval(time_start, time_stop);
+    PrintArray(mod_size,diffuseMap);
+
+    // Display timing results
+    printf("\nGPU Time:    %f (msec))\n", elapsed_gpu);
+    printf("\nKernal Time: %f (msec))\n", elapsed_kernal);
+    printf("\nCPU Time:    %f (msec))\n", elapsed_cpu);
 
     // Compare the results //EDIT
     struct point** cpuPaths = traversePath(cpuGrid);
@@ -364,4 +386,16 @@ int printPath(int num_agents, struct point** paths, char* filein)
     }
 
     fclose(fp);
+}
+
+double interval(struct timespec start, struct timespec end)
+{
+  struct timespec temp;
+  temp.tv_sec = end.tv_sec - start.tv_sec;
+  temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+  if (temp.tv_nsec < 0) {
+    temp.tv_sec = temp.tv_sec - 1;
+    temp.tv_nsec = temp.tv_nsec + 1000000000;
+  }
+  return (((double)temp.tv_sec) + ((double)temp.tv_nsec)*1.0e-9);
 }
