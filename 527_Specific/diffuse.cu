@@ -11,7 +11,6 @@
 #include <cstdlib>
 #include <math.h>
 #include <time.h>
-#include <fstream>
 
 #include "LoadMap.h"
 using namespace std;
@@ -42,7 +41,7 @@ __global__ void gpu_checkDiffusion (int size, data_t* diffuseMap, data_t* obstac
 int gpu_checkDiffusionHost(int size, int* map);
 void cpu_diffuse (int size, data_t* diffuseMap, data_t* obstacleMap, int dx, int dy);
 int cpu_checkDiffusion(int size, data_t* diffuseMap, data_t* obstacleMap);
-int printPath(int num_agents, struct point** paths, char* filein);
+void printPath(int num_agents, struct point** paths, int args, char* filein);
 int PrintIntArray(int size, int* arr);
 int PrintArray(int size, data_t* arr);
 double interval(struct timespec start, struct timespec end);
@@ -54,13 +53,14 @@ struct point** traversePath(grid* g);
 int main(int argc, char *argv[]){
     printf("Start\n");
     int flag = 0;
+    char * name = "Null.yaml";
 
     /* retrieve input file */
     grid* cpuGrid;
     grid* gpuGrid;
     if (argc == 2){
-      cpuGrid = LoadGrid(argv[1]);
-      gpuGrid = LoadGrid(argv[1]); //this creates the grid to use
+      cpuGrid = MakeGrid(atoi(argv[1]));
+      gpuGrid = MakeGrid(atoi(argv[1])); //this creates the grid to use
     }
     else{
       printf("Requires input: filepath\n");
@@ -158,8 +158,9 @@ int main(int argc, char *argv[]){
     cudaEventDestroy(kernal_stop);
     printf("GPU diffusion finished.\n");
 
+
     gpuGrid->diff_matrix = h_dMap;
-    PrintArray(mod_size,h_dMap);
+
 
     // Compute the results on the host //EDIT
     printf("Running CPU diffusion...\n");
@@ -168,7 +169,7 @@ int main(int argc, char *argv[]){
     clock_gettime(CLOCK_REALTIME, &time_stop);
     printf("CPU diffusion finished.\n");
     elapsed_cpu = interval(time_start, time_stop);
-    PrintArray(mod_size,diffuseMap);
+    cpuGrid->diff_matrix = diffuseMap;
 
     // Display timing results
     printf("\nGPU Time:    %f (msec))\n", elapsed_gpu);
@@ -178,8 +179,8 @@ int main(int argc, char *argv[]){
     // Compare the results //EDIT
     struct point** cpuPaths = traversePath(cpuGrid);
     struct point** gpuPaths = traversePath(gpuGrid);
-    printPath(cpuGrid->num_agents, cpuPaths, argv[1]);
-    printPath(gpuGrid->num_agents, gpuPaths, argv[1]);
+    printPath(cpuGrid->num_agents, cpuPaths, argc, name);
+    printPath(gpuGrid->num_agents, gpuPaths, argc, name);
 
     // Free-up device and host memory
     CUDA_SAFE_CALL(cudaFree(d_dMap));
@@ -200,11 +201,11 @@ __global__ void gpu_diffuse (int size, data_t* diffuseMap, data_t* obstacleMap, 
 
     data_t newD;
     data_t large = (data_t) size*size*100;
-
+    diffuseMap[dy * size + dx] = large;
     if(i > 0 && j > 0 && i < size-1 && j < size-1){
-        diffuseMap[dy * size + dx] = large;
         newD = (data_t) .25 * (diffuseMap[(i-1)*size + j] + diffuseMap[(i+1)*size + j] + diffuseMap[i*size + j+1] + diffuseMap[i*size + j-1]) * obstacleMap[i*size + j];
         diffuseMap[i*size + j] = newD;
+        diffuseMap[dy * size + dx] = large;
     }
 
 }
@@ -301,6 +302,7 @@ struct point** traversePath(grid* g){
     struct point** paths = (struct point**) calloc(num_agents, sizeof(struct point*));
 
     for (i = 0; i < num_agents; i++){
+
         x = a->sx;
         y = a->sy;
         pathLength = 0;
@@ -311,8 +313,9 @@ struct point** traversePath(grid* g){
         pt_it = paths[i];
         currentSpot = y*mod_size + x;
 
-        while(currentSpot != target){
 
+
+        while(currentSpot != target){
             pt_it->next = (struct point*) calloc(1, sizeof(struct point));
 
             neighborMax = 0;
@@ -345,22 +348,16 @@ struct point** traversePath(grid* g){
             pt_it->y = y;
             pt_it->next = NULL;
 
-            //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
-            //fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
             pathLength++;
+            //printf("AGENT%d: [%d, %d]\n", i, x, y);
         }
-
         paths[i]->length = pathLength;
         a = a->next;
     }
-
     return paths;
-    //FILE *fp;
-    //fprintf(fp, "Path Length: %d", pathLength);
-    //fclose(fp);
 }
 
-int printPath(int num_agents, struct point** paths, char* filein)
+void printPath(int num_agents, struct point** paths, int args, char* filein)
 {
     int i;
     struct point* pt_it;
@@ -368,8 +365,12 @@ int printPath(int num_agents, struct point** paths, char* filein)
     char* new_name;
 
     // get new file name
-    new_name = strtok(filein, ".");
-    new_name = strcat(new_name, "_serial_path.yaml");
+    if (args == 3){
+        new_name = strtok(filein, ".");
+        new_name = strcat(new_name, "_serial_path.yaml");
+    }
+    else
+        new_name = "default_paths.yaml";
 
     fp = fopen(new_name,"w+");
     fprintf(fp, "paths:\n");
