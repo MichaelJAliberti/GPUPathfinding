@@ -1,8 +1,12 @@
 /****************************************************************************
 
-   gcc -O1 main.c -o main
+   gcc -O1 -lrt -lm main.c -o main
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
 #include "LoadMap.h"
 
 /* structures */
@@ -17,26 +21,47 @@ struct point{
 void diffuse(grid* g);
 int checkDiffusion(grid* g);
 struct point** traversePath(grid* g);
-int printPath(int num_agents, struct point** paths, char* filein);
+int printPath(int num_agents, struct point** paths, int args, char* filein);
+double interval(struct timespec start, struct timespec end);
+double wakeup_delay();
 
 /*****************************************************************************/
 int main(int argc, char *argv[])
 {
+    struct timespec time_start, time_stop;
+    char* name;
+    
     /* retrieve input file */
     grid* myGrid;
-    if (argc == 2){
-        myGrid = LoadGrid(argv[1]); //this creates the grid to use
+    if (argc == 3){
+        name = argv[2];
+        myGrid = LoadGrid(name); //this creates the grid to use
+    }
+    else if (argc == 2){
+        printf("DEFAULTING\n");
+        name = "null.yaml";
+        myGrid = MakeGrid(atoi(argv[1]));
     }
     else{
-        printf("Requires input: filepath\n");
+        printf("ERROR: No input\n");
         exit(1);
     }
 
-    /*this runs the entire diffusion process and will run until the graph is fully diffused.*/
+    /* setup for timing */
+    //double final_answer = wakeup_delay();
+
+    /* this runs the entire diffusion process and will run until the graph is fully diffused */
+    clock_gettime(CLOCK_REALTIME, &time_start);
     diffuse(myGrid);
     struct point** paths = traversePath(myGrid);
+    clock_gettime(CLOCK_REALTIME, &time_stop);
 
-    printPath(myGrid->num_agents, paths, argv[1]);
+    /* print runtime */
+    printf("TIME: %.10f\n", interval(time_start, time_stop));
+    //printf("\n%.0f\n", final_answer);
+
+    /* print path to file */
+    printPath(myGrid->num_agents, paths, argc, name);
 } /* end main */
 
 /************************************/
@@ -59,7 +84,7 @@ void diffuse(grid* g)
 
   while (!checkDiffusion(g) && it < fullsize){ /**/
     it++;
-    //PrintGrid(g);
+    PrintGrid(g);
     for (i = 1; i < row_bound; i++) {
       for (j = 1; j < row_bound; j++) {
         data[destY * mod_size + destX] = large;
@@ -109,6 +134,7 @@ struct point** traversePath(grid* g){
     struct point** paths = (struct point**) calloc(num_agents, sizeof(struct point*));
 
     for (i = 0; i < num_agents; i++){
+
         x = a->sx;
         y = a->sy;
         pathLength = 0;
@@ -119,8 +145,10 @@ struct point** traversePath(grid* g){
         pt_it = paths[i];
         currentSpot = y*mod_size + x;
 
+        printf("AGENT%d: [%d, %d]\n", i, x, y);
+
         while(currentSpot != target){
-            
+
             pt_it->next = (struct point*) calloc(1, sizeof(struct point));
 
             neighborMax = 0;
@@ -153,8 +181,6 @@ struct point** traversePath(grid* g){
             pt_it->y = y;
             pt_it->next = NULL;
 
-            //fp << "- [" << (x)%rowlen << ", " << (y)/rowlen << "] | D = " << currentSpot << endl;
-            //fprintf(fp, "- [%d,%d] | D = %f\n", x, y, currentSpot);
             pathLength++;
         }
 
@@ -163,12 +189,9 @@ struct point** traversePath(grid* g){
     }
 
     return paths;
-    //FILE *fp;
-    //fprintf(fp, "Path Length: %d", pathLength);
-    //fclose(fp);
 }
 
-int printPath(int num_agents, struct point** paths, char* filein)
+int printPath(int num_agents, struct point** paths, int args, char* filein)
 {
     int i;
     struct point* pt_it;
@@ -176,8 +199,12 @@ int printPath(int num_agents, struct point** paths, char* filein)
     char* new_name;
 
     // get new file name
-    new_name = strtok(filein, ".");
-    new_name = strcat(new_name, "_serial_path.yaml");
+    if (args == 3){
+        new_name = strtok(filein, ".");
+        new_name = strcat(new_name, "_serial_path.yaml");
+    }
+    else
+        new_name = "default_paths.yaml";
 
     fp = fopen(new_name,"w+");
     fprintf(fp, "paths:\n");
@@ -194,4 +221,37 @@ int printPath(int num_agents, struct point** paths, char* filein)
     }
 
     fclose(fp);
+}
+
+double wakeup_delay()
+{
+  double meas = 0; int i, j;
+  struct timespec time_start, time_stop;
+  double quasi_random = 0;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time_start);
+  j = 100;
+  while (meas < 1.0) {
+    for (i=1; i<j; i++) {
+      /* This iterative calculation uses a chaotic map function, specifically
+         the complex quadratic map (as in Julia and Mandelbrot sets), which is
+         unpredictable enough to prevent compiler optimisation. */
+      quasi_random = quasi_random*quasi_random - 1.923432;
+    }
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time_stop);
+    meas = interval(time_start, time_stop);
+    j *= 2; /* Twice as much delay next time, until we've taken 1 second */
+  }
+  return quasi_random;
+}
+
+double interval(struct timespec start, struct timespec end)
+{
+  struct timespec temp;
+  temp.tv_sec = end.tv_sec - start.tv_sec;
+  temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+  if (temp.tv_nsec < 0) {
+    temp.tv_sec = temp.tv_sec - 1;
+    temp.tv_nsec = temp.tv_nsec + 1000000000;
+  }
+  return (((double)temp.tv_sec) + ((double)temp.tv_nsec)*1.0e-9);
 }
